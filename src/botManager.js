@@ -47,9 +47,14 @@ function agendarProximo(bot, config) {
 
 function enviarPasso(bot, chatId, passo) {
   const opts = {};
-  if (passo.tipo === "botoes" && passo.botoes) {
+  // botoes pode vir como string (SQLite) ou array
+  const botoes = typeof passo.botoes === "string"
+    ? JSON.parse(passo.botoes)
+    : (passo.botoes || []);
+
+  if (passo.tipo === "botoes" && botoes.length) {
     opts.reply_markup = {
-      inline_keyboard: passo.botoes.map((b) => [
+      inline_keyboard: botoes.map(b => [
         { text: b.texto, callback_data: JSON.stringify({ proximoPasso: b.proximoPasso }) },
       ]),
     };
@@ -78,8 +83,11 @@ async function configurarFunil(bot, config) {
     try {
       const dados = JSON.parse(query.data);
       if (dados.proximoPasso !== undefined) {
-        const passo = passos.find((p) => p.ordem === dados.proximoPasso);
-        if (passo) { bot.answerCallbackQuery(query.id); enviarPasso(bot, query.message.chat.id, passo); }
+        const passo = passos.find(p => p.ordem === dados.proximoPasso);
+        if (passo) {
+          bot.answerCallbackQuery(query.id);
+          enviarPasso(bot, query.message.chat.id, passo);
+        }
       }
     } catch (_) {}
   });
