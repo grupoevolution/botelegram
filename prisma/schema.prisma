@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./database.db"
 }
 
 model Bot {
@@ -39,7 +39,7 @@ model Passo {
   ordem    Int
   mensagem String
   tipo     String   @default("texto")
-  botoes   Json?
+  botoes   String?
   criadoEm DateTime @default(now())
 }
 
