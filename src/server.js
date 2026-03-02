@@ -4,7 +4,7 @@ const session = require("express-session");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
-const { iniciarTodosBots, iniciarBot, pararBot, getStatus, isBotAtivo } = require("./botManager");
+const { iniciarTodosBots, iniciarBot, pararBot, getStatus } = require("./botManager");
 const multer = require("multer");
 const fs = require("fs");
 
@@ -34,7 +34,18 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 },
 }));
 
-// Cria admin padrão se não existir
+// Converte botoes de string para objeto ao ler
+function parseFunil(funil) {
+  if (!funil) return funil;
+  return {
+    ...funil,
+    passos: (funil.passos || []).map(p => ({
+      ...p,
+      botoes: p.botoes ? JSON.parse(p.botoes) : [],
+    })),
+  };
+}
+
 async function seedAdmin() {
   const existe = await prisma.admin.count();
   if (existe === 0) {
@@ -44,7 +55,6 @@ async function seedAdmin() {
   }
 }
 
-// Middleware de autenticação
 function auth(req, res, next) {
   if (req.session.logado) return next();
   res.status(401).json({ erro: "Não autenticado" });
@@ -72,9 +82,12 @@ app.get("/api/me", (req, res) => {
 
 // ---- BOTS ----
 app.get("/api/bots", auth, async (req, res) => {
-  const bots = await prisma.bot.findMany({ include: { funil: { select: { id: true, nome: true } } }, orderBy: { criadoEm: "desc" } });
+  const bots = await prisma.bot.findMany({
+    include: { funil: { select: { id: true, nome: true } } },
+    orderBy: { criadoEm: "desc" },
+  });
   const status = getStatus();
-  res.json(bots.map((b) => ({ ...b, online: !!status[b.id] })));
+  res.json(bots.map(b => ({ ...b, online: !!status[b.id] })));
 });
 
 app.post("/api/bots", auth, upload.single("foto"), async (req, res) => {
@@ -140,8 +153,11 @@ app.get("/api/status", auth, (req, res) => {
 
 // ---- FUNIS ----
 app.get("/api/funis", auth, async (req, res) => {
-  const funis = await prisma.funil.findMany({ include: { passos: { orderBy: { ordem: "asc" } } }, orderBy: { criadoEm: "desc" } });
-  res.json(funis);
+  const funis = await prisma.funil.findMany({
+    include: { passos: { orderBy: { ordem: "asc" } } },
+    orderBy: { criadoEm: "desc" },
+  });
+  res.json(funis.map(parseFunil));
 });
 
 app.post("/api/funis", auth, async (req, res) => {
@@ -155,13 +171,13 @@ app.post("/api/funis", auth, async (req, res) => {
             ordem: i,
             mensagem: p.mensagem,
             tipo: p.tipo || "texto",
-            botoes: p.botoes || null,
+            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
           })),
         },
       },
       include: { passos: true },
     });
-    res.json(funil);
+    res.json(parseFunil(funil));
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
@@ -171,7 +187,6 @@ app.put("/api/funis/:id", auth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { nome, descricao, passos } = req.body;
-    // Remove passos antigos e recria
     await prisma.passo.deleteMany({ where: { funilId: id } });
     const funil = await prisma.funil.update({
       where: { id },
@@ -182,13 +197,13 @@ app.put("/api/funis/:id", auth, async (req, res) => {
             ordem: i,
             mensagem: p.mensagem,
             tipo: p.tipo || "texto",
-            botoes: p.botoes || null,
+            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
           })),
         },
       },
       include: { passos: true },
     });
-    res.json(funil);
+    res.json(parseFunil(funil));
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
@@ -199,7 +214,6 @@ app.delete("/api/funis/:id", auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-// Importar funil via JSON
 app.post("/api/funis/importar", auth, async (req, res) => {
   try {
     const { nome, descricao, passos } = req.body;
@@ -211,19 +225,18 @@ app.post("/api/funis/importar", auth, async (req, res) => {
             ordem: i,
             mensagem: p.mensagem,
             tipo: p.tipo || "texto",
-            botoes: p.botoes || null,
+            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
           })),
         },
       },
       include: { passos: true },
     });
-    res.json(funil);
+    res.json(parseFunil(funil));
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
 });
 
-// Inicialização
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`[SERVIDOR] Rodando na porta ${PORT}`);
