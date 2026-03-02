@@ -3,207 +3,244 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Bot Manager</title>
+  <title>Bot Manager</title>
   <style>
     :root {
-      --bg: #0d0f18; --surface: #161925; --surface2: #1e2235; --border: #2a2f45;
-      --primary: #6366f1; --primary-dark: #4f52d4; --green: #22c55e; --red: #ef4444;
-      --yellow: #f59e0b; --purple: #a855f7; --text: #e2e8f0; --muted: #64748b; --radius: 10px;
+      --bg:#0d0f18;--surface:#161925;--surface2:#1e2235;--border:#2a2f45;
+      --primary:#6366f1;--pd:#4f52d4;--green:#22c55e;--red:#ef4444;
+      --yellow:#f59e0b;--purple:#a855f7;--text:#e2e8f0;--muted:#64748b;--r:10px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px 40px; width: 100%; max-width: 400px; }
-    .login-box h1 { font-size: 22px; margin-bottom: 6px; }
-    .login-box p { color: var(--muted); margin-bottom: 32px; font-size: 14px; }
-    #app { display: none; }
-    .layout { display: flex; min-height: 100vh; }
-    .sidebar { width: 230px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 10; }
-    .sidebar-logo { padding: 0 20px 20px; font-size: 15px; font-weight: 700; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; color: var(--primary); }
-    .sidebar-logo svg { width: 22px; height: 22px; }
-    .nav-section { padding: 8px 20px 4px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.15s; border-left: 3px solid transparent; margin: 1px 0; }
-    .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { color: var(--primary); background: rgba(99,102,241,0.08); border-left-color: var(--primary); }
-    .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
-    .sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
-    .btn-logout { width: 100%; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius); padding: 8px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
-    .btn-logout:hover { border-color: var(--red); color: var(--red); }
-    .main { flex: 1; overflow-y: auto; margin-left: 230px; }
-    .page { display: none; padding: 28px 32px; max-width: 1200px; }
-    .page.active { display: block; }
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-header h2 { font-size: 20px; font-weight: 600; }
-    .page-header p { color: var(--muted); font-size: 13px; margin-top: 3px; }
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; color: var(--text); font-size: 14px; outline: none; transition: border 0.2s; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
-    .form-group textarea { resize: vertical; min-height: 72px; }
-    .form-group select option { background: var(--surface2); }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-size: 13px; cursor: pointer; border: none; transition: all 0.15s; font-weight: 500; }
-    .btn svg { width: 15px; height: 15px; }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
-    .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--border); }
-    .btn-danger:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
-    .btn-green { background: var(--green); color: #fff; }
-    .btn-green:hover { opacity: 0.9; }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
-    .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-    .stat-card .value { font-size: 26px; font-weight: 700; }
-    .stat-card.green .value { color: var(--green); } .stat-card.red .value { color: var(--red); } .stat-card.blue .value { color: var(--primary); } .stat-card.purple .value { color: var(--purple); }
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead { background: var(--surface2); }
-    th { padding: 11px 14px; text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
-    td { padding: 13px 14px; font-size: 13px; border-top: 1px solid var(--border); vertical-align: middle; }
-    tr:hover td { background: rgba(255,255,255,0.015); }
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-    .badge-green { background: rgba(34,197,94,0.12); color: var(--green); } .badge-red { background: rgba(239,68,68,0.12); color: var(--red); }
-    .badge-yellow { background: rgba(245,158,11,0.12); color: var(--yellow); } .badge-purple { background: rgba(168,85,247,0.12); color: var(--purple); } .badge-blue { background: rgba(99,102,241,0.12); color: var(--primary); }
-    .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-    .td-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 24px; }
-    .modal-lg { max-width: 700px; }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .modal-header h3 { font-size: 16px; font-weight: 600; }
-    .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 22px; line-height: 1; padding: 0; }
-    .modal-close:hover { color: var(--text); }
-    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-    .passos-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-    .passo-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-    .passo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .passo-num { font-size: 11px; color: var(--primary); font-weight: 700; background: rgba(99,102,241,0.1); padding: 2px 8px; border-radius: 99px; }
-    .midias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-    .midia-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-    .midia-card .midia-top { display: flex; align-items: center; justify-content: space-between; }
-    .midia-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: var(--bg); }
-    #toast { position: fixed; bottom: 20px; right: 20px; z-index: 999; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 18px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-    #toast.show { opacity: 1; } #toast.success { border-color: var(--green); color: var(--green); } #toast.error { border-color: var(--red); color: var(--red); }
-    .avatar-placeholder { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
-    .bot-name-cell { display: flex; align-items: center; gap: 10px; }
-    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
-    .empty svg { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.25; display: block; margin: 0 auto 10px; }
-    .empty p { font-size: 13px; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
-    .section-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
-    code { font-family: monospace; background: var(--bg); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
-    .bot-detail-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-    .tab-btn { padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none; border-left: none; border-right: none; transition: all 0.15s; }
-    .tab-btn:hover { color: var(--text); } .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-    .tab-content { display: none; } .tab-content.active { display: block; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+    /* LOGIN */
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+    .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:100%;max-width:400px;}
+    .login-box h1{font-size:22px;margin-bottom:6px;}
+    .login-box .sub{color:var(--muted);margin-bottom:28px;font-size:14px;}
+    /* LAYOUT */
+    #app{display:none;}
+    .layout{display:flex;min-height:100vh;}
+    /* SIDEBAR */
+    .sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;top:0;left:0;height:100vh;z-index:10;}
+    .logo{padding:0 20px 20px;font-size:15px;font-weight:700;border-bottom:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:10px;color:var(--primary);}
+    .ns{padding:8px 20px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+    .ni{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:14px;color:var(--muted);border-left:3px solid transparent;transition:all .15s;}
+    .ni:hover{background:var(--surface2);color:var(--text);}
+    .ni.active{color:var(--primary);background:rgba(99,102,241,.08);border-left-color:var(--primary);}
+    .sb-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);}
+    .btn-sair{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r);padding:8px;cursor:pointer;font-size:13px;transition:all .15s;}
+    .btn-sair:hover{border-color:var(--red);color:var(--red);}
+    /* MAIN */
+    .main{flex:1;margin-left:230px;overflow-y:auto;}
+    .page{display:none;padding:28px 32px;max-width:1200px;}
+    .page.active{display:block;}
+    /* PAGE HEADER */
+    .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+    .ph h2{font-size:20px;font-weight:600;}
+    .ph p{color:var(--muted);font-size:13px;margin-top:3px;}
+    /* FORM */
+    .fg{margin-bottom:14px;}
+    .fg label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+    .fg input,.fg select,.fg textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--primary);}
+    .fg textarea{resize:vertical;min-height:72px;}
+    .fg select option{background:var(--surface2);}
+    .fg small{font-size:11px;color:var(--muted);display:block;margin-top:4px;}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:13px;cursor:pointer;border:none;transition:all .15s;font-weight:500;}
+    .bp{background:var(--primary);color:#fff;}.bp:hover{background:var(--pd);}
+    .bs{background:var(--surface2);color:var(--text);border:1px solid var(--border);}.bs:hover{border-color:var(--primary);color:var(--primary);}
+    .bd{background:transparent;color:var(--red);border:1px solid var(--border);}.bd:hover{background:rgba(239,68,68,.1);border-color:var(--red);}
+    .bg{background:var(--green);color:#fff;}.bg:hover{opacity:.9;}
+    .bsm{padding:5px 10px;font-size:12px;}
+    /* STATS */
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+    .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
+    .sc .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+    .sc .val{font-size:26px;font-weight:700;}
+    .sc.blue .val{color:var(--primary);}.sc.green .val{color:var(--green);}.sc.red .val{color:var(--red);}.sc.purple .val{color:var(--purple);}
+    /* TABLE */
+    .tw{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+    table{width:100%;border-collapse:collapse;}
+    thead{background:var(--surface2);}
+    th{padding:11px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500;}
+    td{padding:13px 14px;font-size:13px;border-top:1px solid var(--border);vertical-align:middle;}
+    tr:hover td{background:rgba(255,255,255,.015);}
+    /* BADGE */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;}
+    .bg-green{background:rgba(34,197,94,.12);color:var(--green);}
+    .bg-red{background:rgba(239,68,68,.12);color:var(--red);}
+    .bg-yellow{background:rgba(245,158,11,.12);color:var(--yellow);}
+    .bg-purple{background:rgba(168,85,247,.12);color:var(--purple);}
+    .bg-blue{background:rgba(99,102,241,.12);color:var(--primary);}
+    .dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
+    .actions{display:flex;gap:5px;flex-wrap:wrap;}
+    /* MODAL */
+    .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;padding:20px;}
+    .mo.open{display:flex;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:24px;}
+    .modal-lg{max-width:720px;}
+    .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .mh h3{font-size:16px;font-weight:600;}
+    .mc{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;padding:0;}
+    .mc:hover{color:var(--text);}
+    .mf{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+    /* PASSOS */
+    .pl{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+    .pc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+    .pc-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .pn{font-size:11px;color:var(--primary);font-weight:700;background:rgba(99,102,241,.1);padding:2px 8px;border-radius:99px;}
+    /* MIDIAS */
+    .mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+    .mc2{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;}
+    .mc2-top{display:flex;align-items:center;justify-content:space-between;}
+    .mimg{width:100%;height:110px;object-fit:cover;border-radius:8px;}
+    /* TABS */
+    .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
+    .tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--muted);border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+    .tab:hover{color:var(--text);}
+    .tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+    .tc{display:none;}.tc.active{display:block;}
+    /* AVATAR */
+    .av{width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+    .nc{display:flex;align-items:center;gap:10px;}
+    /* MISC */
+    .empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;}
+    hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
+    .sl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+    code{font-family:monospace;background:var(--bg);padding:1px 6px;border-radius:4px;font-size:12px;}
+    #toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;}
+    #toast.show{opacity:1;}#toast.ok{border-color:var(--green);color:var(--green);}#toast.err{border-color:var(--red);color:var(--red);}
+    /* FUNIL CARDS */
+    .fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
+    .fc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+    .fc-nome{font-weight:600;margin-bottom:3px;}
+    .fc-desc{font-size:12px;color:var(--muted);}
+    .passo-row{padding:5px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;}
+    .passo-idx{background:var(--surface2);padding:1px 6px;border-radius:4px;font-weight:600;font-size:11px;}
   </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <h1>Bot Manager</h1>
-    <p>Acesse o painel de gerenciamento</p>
-    <div class="form-group"><label>Usuario</label><input type="text" id="login-user" placeholder="admin" /></div>
-    <div class="form-group"><label>Senha</label><input type="password" id="login-senha" placeholder="senha" onkeydown="if(event.key==='Enter')fazerLogin()" /></div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="fazerLogin()">Entrar</button>
-    <p id="login-erro" style="color:var(--red);font-size:13px;margin-top:10px;display:none"></p>
+    <div class="sub">Painel de gerenciamento de bots</div>
+    <div class="fg"><label>Usuario</label><input type="text" id="lu" placeholder="admin" /></div>
+    <div class="fg"><label>Senha</label><input type="password" id="ls" placeholder="senha" onkeydown="if(event.key==='Enter')login()" /></div>
+    <button class="btn bp" style="width:100%;justify-content:center;margin-top:4px" onclick="login()">Entrar</button>
+    <p id="le" style="color:var(--red);font-size:13px;margin-top:10px;display:none"></p>
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
   <div class="layout">
+
     <aside class="sidebar">
-      <div class="sidebar-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Bot Manager
       </div>
       <nav>
-        <div class="nav-section">Geral</div>
-        <div class="nav-item active" data-page="dashboard" onclick="navTo('dashboard')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <div class="ns">Geral</div>
+        <div class="ni active" data-p="dashboard" onclick="nav('dashboard')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Dashboard
         </div>
-        <div class="nav-section">Configuracao</div>
-        <div class="nav-item" data-page="bots" onclick="navTo('bots')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <div class="ns">Configuracao</div>
+        <div class="ni" data-p="bots" onclick="nav('bots')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Bots / Modelos
         </div>
-        <div class="nav-item" data-page="funis" onclick="navTo('funis')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <div class="ni" data-p="funis" onclick="nav('funis')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
           Funis do Privado
         </div>
       </nav>
-      <div class="sidebar-bottom"><button class="btn-logout" onclick="fazerLogout()">Sair</button></div>
+      <div class="sb-bottom"><button class="btn-sair" onclick="logout()">Sair</button></div>
     </aside>
 
     <main class="main">
 
+      <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div class="page-header">
+        <div class="ph">
           <div><h2>Dashboard</h2><p>Visao geral do sistema</p></div>
-          <button class="btn btn-secondary btn-sm" onclick="carregarDashboard()">Atualizar</button>
+          <button class="btn bs bsm" onclick="loadDash()">Atualizar</button>
         </div>
-        <div class="stats-grid">
-          <div class="stat-card blue"><div class="label">Total de Bots</div><div class="value" id="stat-total">0</div></div>
-          <div class="stat-card green"><div class="label">Online Agora</div><div class="value" id="stat-online">0</div></div>
-          <div class="stat-card red"><div class="label">Offline</div><div class="value" id="stat-offline">0</div></div>
-          <div class="stat-card purple"><div class="label">Total de Midias</div><div class="value" id="stat-midias">0</div></div>
-          <div class="stat-card"><div class="label">Funis</div><div class="value" id="stat-funis">0</div></div>
-          <div class="stat-card"><div class="label">Conversas PV</div><div class="value" id="stat-conversas">0</div></div>
+        <div class="stats">
+          <div class="sc blue"><div class="lbl">Total Bots</div><div class="val" id="s-total">0</div></div>
+          <div class="sc green"><div class="lbl">Online</div><div class="val" id="s-online">0</div></div>
+          <div class="sc red"><div class="lbl">Offline</div><div class="val" id="s-offline">0</div></div>
+          <div class="sc purple"><div class="lbl">Midias</div><div class="val" id="s-midias">0</div></div>
+          <div class="sc"><div class="lbl">Funis</div><div class="val" id="s-funis">0</div></div>
+          <div class="sc"><div class="lbl">Conversas PV</div><div class="val" id="s-conv">0</div></div>
         </div>
-        <div class="table-wrap">
+        <div class="tw">
           <table>
-            <thead><tr><th>Bot</th><th>Cidade / Idade</th><th>Funil</th><th>Midias</th><th>Ultima Post</th><th>Status</th></tr></thead>
-            <tbody id="dashboard-lista"></tbody>
+            <thead><tr><th>Bot</th><th>Perfil</th><th>Funil</th><th>Midias</th><th>Ultima Postagem</th><th>Status</th></tr></thead>
+            <tbody id="dash-tb"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- BOTS -->
       <div class="page" id="page-bots">
-        <div class="page-header">
-          <div><h2>Bots / Modelos</h2><p>Gerencie todos os perfis</p></div>
-          <button class="btn btn-primary" onclick="abrirModalBot()">+ Novo Bot</button>
+        <div class="ph">
+          <div><h2>Bots / Modelos</h2><p>Gerencie os perfis que postam no grupo</p></div>
+          <button class="btn bp" onclick="openBot()">+ Novo Bot</button>
         </div>
-        <div class="table-wrap">
+        <div class="tw">
           <table>
-            <thead><tr><th>Modelo</th><th>Cidade / Idade</th><th>Funil PV</th><th>Midias</th><th>Status</th><th>Acoes</th></tr></thead>
-            <tbody id="bots-lista"></tbody>
+            <thead><tr><th>Modelo</th><th>Perfil</th><th>Funil PV</th><th>Midias</th><th>Status</th><th>Acoes</th></tr></thead>
+            <tbody id="bots-tb"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- FUNIS -->
       <div class="page" id="page-funis">
-        <div class="page-header">
-          <div><h2>Funis do Privado</h2><p>Fluxo de conversa no privado</p></div>
-          <button class="btn btn-primary" onclick="abrirModalFunil()">+ Novo Funil</button>
+        <div class="ph">
+          <div><h2>Funis do Privado</h2><p>Fluxo de conversa quando alguem chama no privado</p></div>
+          <button class="btn bp" onclick="openFunil()">+ Novo Funil</button>
         </div>
-        <div id="funis-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+        <div id="funis-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
       </div>
 
-      <div class="page" id="page-bot-detail">
-        <div class="page-header">
-          <div style="display:flex;align-items:center;gap:12px">
-            <button class="btn btn-secondary btn-sm" onclick="navTo('bots')">Voltar</button>
-            <div><h2 id="detail-nome">Bot</h2><p id="detail-sub">Midias e conteudo</p></div>
+      <!-- BOT DETAIL -->
+      <div class="page" id="page-detail">
+        <div class="ph">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn bs bsm" onclick="nav('bots')">Voltar</button>
+            <div><h2 id="det-nome">Bot</h2><p id="det-sub"></p></div>
           </div>
-          <button class="btn btn-primary" onclick="abrirModalMidia()">+ Adicionar Midia</button>
+          <button class="btn bp" onclick="openMidia()">+ Adicionar Midia</button>
         </div>
-        <div class="bot-detail-tabs">
-          <button class="tab-btn active" onclick="trocarTab('apresentacao')">Apresentacao</button>
-          <button class="tab-btn" onclick="trocarTab('rotina')">Rotina</button>
-          <button class="tab-btn" onclick="trocarTab('interacao')">Interacao</button>
-          <button class="tab-btn" onclick="trocarTab('chamada_pvt')">Chamada PVT</button>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:20px;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+            As midias abaixo sao usadas pelo bot para postar no grupo automaticamente. Cada categoria e alternada no cronograma.
+          </div>
+          <div style="display:flex;gap:20px;font-size:12px;">
+            <span><strong style="color:var(--primary)">Apresentacao</strong> — se apresenta com foto</span>
+            <span><strong style="color:var(--green)">Rotina</strong> — fotos do dia a dia</span>
+            <span><strong style="color:var(--yellow)">Interacao</strong> — texto ou pergunta pro grupo</span>
+            <span><strong style="color:var(--purple)">Chamada PVT</strong> — convite pro privado</span>
+          </div>
         </div>
-        <div class="tab-content active" id="tab-apresentacao"><div class="midias-grid" id="midias-apresentacao"></div></div>
-        <div class="tab-content" id="tab-rotina"><div class="midias-grid" id="midias-rotina"></div></div>
-        <div class="tab-content" id="tab-interacao"><div class="midias-grid" id="midias-interacao"></div></div>
-        <div class="tab-content" id="tab-chamada_pvt"><div class="midias-grid" id="midias-chamada_pvt"></div></div>
+        <div class="tabs">
+          <button class="tab active" onclick="tab('apresentacao')">Apresentacao</button>
+          <button class="tab" onclick="tab('rotina')">Rotina</button>
+          <button class="tab" onclick="tab('interacao')">Interacao</button>
+          <button class="tab" onclick="tab('chamada_pvt')">Chamada PVT</button>
+        </div>
+        <div class="tc active" id="tc-apresentacao"><div class="mg" id="mg-apresentacao"></div></div>
+        <div class="tc" id="tc-rotina"><div class="mg" id="mg-rotina"></div></div>
+        <div class="tc" id="tc-interacao"><div class="mg" id="mg-interacao"></div></div>
+        <div class="tc" id="tc-chamada_pvt"><div class="mg" id="mg-chamada_pvt"></div></div>
       </div>
 
     </main>
@@ -211,84 +248,84 @@
 </div>
 
 <!-- MODAL BOT -->
-<div class="modal-overlay" id="modal-bot">
+<div class="mo" id="mo-bot">
   <div class="modal">
-    <div class="modal-header"><h3 id="modal-bot-titulo">Novo Bot</h3><button class="modal-close" onclick="fecharModal('modal-bot')">&times;</button></div>
+    <div class="mh"><h3 id="mbot-titulo">Novo Bot</h3><button class="mc" onclick="closeM('mo-bot')">&times;</button></div>
     <input type="hidden" id="bot-id" />
-    <div class="grid-2">
-      <div class="form-group" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="bot-nome" placeholder="Ex: Camila" /></div>
-      <div class="form-group"><label>Idade</label><input type="number" id="bot-idade" value="24" min="18" max="40" /></div>
-      <div class="form-group"><label>Cidade</label><input type="text" id="bot-cidade" placeholder="Sao Paulo" /></div>
+    <div class="g2">
+      <div class="fg" style="grid-column:1/-1"><label>Nome do Personagem *</label><input type="text" id="bot-nome" placeholder="Ex: Camila" /></div>
+      <div class="fg"><label>Idade</label><input type="number" id="bot-idade" value="24" min="18" max="45" /></div>
+      <div class="fg"><label>Cidade</label><input type="text" id="bot-cidade" placeholder="Sao Paulo" /></div>
     </div>
-    <div class="form-group"><label>Token do Bot (BotFather) *</label><input type="text" id="bot-token" placeholder="123456789:ABCdef..." /></div>
-    <div class="form-group"><label>ID do Grupo *</label><input type="text" id="bot-grupo" placeholder="-1001234567890" /></div>
-    <div class="form-group"><label>Funil do Privado</label><select id="bot-funil"><option value="">Sem funil</option></select></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="fecharModal('modal-bot')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarBot()">Salvar</button>
+    <div class="fg"><label>Token do Bot (BotFather) *</label><input type="text" id="bot-token" placeholder="123456789:ABCdef..." /></div>
+    <div class="fg"><label>ID do Grupo onde vai postar *</label><input type="text" id="bot-grupo" placeholder="-1001234567890" /><small>O bot precisa ser admin do grupo</small></div>
+    <div class="fg"><label>Funil do Privado</label><select id="bot-funil"><option value="">Sem funil</option></select></div>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-bot')">Cancelar</button>
+      <button class="btn bp" onclick="saveBot()">Salvar Bot</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL MIDIA -->
-<div class="modal-overlay" id="modal-midia">
+<div class="mo" id="mo-midia">
   <div class="modal">
-    <div class="modal-header"><h3 id="modal-midia-titulo">Adicionar Midia</h3><button class="modal-close" onclick="fecharModal('modal-midia')">&times;</button></div>
-    <input type="hidden" id="midia-id" />
-    <div class="grid-2">
-      <div class="form-group">
+    <div class="mh"><h3 id="mmid-titulo">Adicionar Midia</h3><button class="mc" onclick="closeM('mo-midia')">&times;</button></div>
+    <input type="hidden" id="mid-id" />
+    <div class="g2">
+      <div class="fg">
         <label>Categoria *</label>
-        <select id="midia-categoria">
-          <option value="apresentacao">Apresentacao</option>
-          <option value="rotina">Rotina</option>
-          <option value="interacao">Interacao</option>
-          <option value="chamada_pvt">Chamada PVT</option>
+        <select id="mid-cat">
+          <option value="apresentacao">Apresentacao (foto se apresentando)</option>
+          <option value="rotina">Rotina (dia a dia)</option>
+          <option value="interacao">Interacao (texto/pergunta)</option>
+          <option value="chamada_pvt">Chamada PVT (convite privado)</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="fg">
         <label>Tipo *</label>
-        <select id="midia-tipo" onchange="toggleUrlField()">
+        <select id="mid-tipo" onchange="toggleUrl()">
           <option value="foto">Foto</option>
           <option value="video">Video</option>
           <option value="audio">Audio</option>
-          <option value="texto">So Texto</option>
+          <option value="texto">Somente Texto</option>
         </select>
       </div>
     </div>
-    <div class="form-group" id="midia-url-group">
+    <div class="fg" id="url-group">
       <label>URL da Midia *</label>
-      <input type="text" id="midia-url" placeholder="https://link-direto-da-imagem.jpg" />
-      <p style="font-size:11px;color:var(--muted);margin-top:4px">Cole o link direto da midia (Google Drive, Imgur, etc.)</p>
+      <input type="text" id="mid-url" placeholder="https://link-direto-da-imagem-ou-video" />
+      <small>Cole o link direto do arquivo. Ex: link do Google Drive, Imgur, Dropbox, etc.</small>
     </div>
-    <div class="form-group">
-      <label>Legenda / Texto</label>
-      <textarea id="midia-legenda" placeholder="Use {nome}, {idade}, {cidade}..."></textarea>
-      <p style="font-size:11px;color:var(--muted);margin-top:4px">Variaveis: <code>{nome}</code> <code>{idade}</code> <code>{cidade}</code></p>
+    <div class="fg">
+      <label>Legenda / Texto que aparece no grupo</label>
+      <textarea id="mid-leg" placeholder="Ex: Boa tarde! Sou a {nome}, {idade} anos, de {cidade}. Me chama no privado..."></textarea>
+      <small>Variaveis: <code>{nome}</code> <code>{idade}</code> <code>{cidade}</code></small>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="fecharModal('modal-midia')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarMidia()">Salvar</button>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-midia')">Cancelar</button>
+      <button class="btn bp" onclick="saveMidia()">Salvar Midia</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL FUNIL -->
-<div class="modal-overlay" id="modal-funil" style="align-items:flex-start;overflow-y:auto">
-  <div class="modal modal-lg" style="margin:20px auto">
-    <div class="modal-header"><h3 id="modal-funil-titulo">Novo Funil</h3><button class="modal-close" onclick="fecharModal('modal-funil')">&times;</button></div>
-    <input type="hidden" id="funil-id" />
-    <div class="grid-2">
-      <div class="form-group"><label>Nome *</label><input type="text" id="funil-nome" placeholder="Ex: Funil Principal" /></div>
-      <div class="form-group"><label>Descricao</label><input type="text" id="funil-descricao" placeholder="Descricao opcional..." /></div>
+<div class="mo" id="mo-funil" style="align-items:flex-start;overflow-y:auto;">
+  <div class="modal modal-lg" style="margin:20px auto;">
+    <div class="mh"><h3 id="mfun-titulo">Novo Funil</h3><button class="mc" onclick="closeM('mo-funil')">&times;</button></div>
+    <input type="hidden" id="fun-id" />
+    <div class="g2">
+      <div class="fg"><label>Nome *</label><input type="text" id="fun-nome" placeholder="Ex: Funil Principal" /></div>
+      <div class="fg"><label>Descricao</label><input type="text" id="fun-desc" placeholder="Descricao opcional" /></div>
     </div>
     <hr />
-    <div class="section-label">Passos da Conversa</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Cada passo e enviado quando o usuario manda qualquer mensagem. Texto e/ou midia.</p>
-    <div class="passos-list" id="passos-lista"></div>
-    <button class="btn btn-secondary" style="width:100%" onclick="adicionarPasso()">+ Adicionar Passo</button>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="fecharModal('modal-funil')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarFunil()">Salvar Funil</button>
+    <div class="sl">Passos da Conversa no Privado</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Cada passo e enviado quando o usuario manda qualquer mensagem. Configure texto e/ou midia para cada passo.</p>
+    <div class="pl" id="passos-lista"></div>
+    <button class="btn bs" style="width:100%;justify-content:center;" onclick="addPasso()">+ Adicionar Passo</button>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-funil')">Cancelar</button>
+      <button class="btn bp" onclick="saveFunil()">Salvar Funil</button>
     </div>
   </div>
 </div>
@@ -296,337 +333,338 @@
 <div id="toast"></div>
 
 <script>
-let botsData = [], funisData = [], passosEditor = [], botDetalheId = null, categoriaAtiva = 'apresentacao';
+let bots=[], funis=[], passos=[], detBot=null, catAtiva='apresentacao';
 
-async function api(method, url, body) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
-  return res.json();
+// API
+async function req(m,u,b){
+  const o={method:m,headers:{'Content-Type':'application/json'}};
+  if(b)o.body=JSON.stringify(b);
+  return (await fetch(u,o)).json();
 }
 
-async function fazerLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const senha = document.getElementById('login-senha').value;
-  if (!user || !senha) { loginErro('Preencha usuario e senha'); return; }
-  const res = await api('POST', '/api/login', { user, senha });
-  if (res.ok) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('app').style.display = 'block'; iniciarApp(); }
-  else loginErro(res.erro || 'Erro ao fazer login');
+// AUTH
+async function login(){
+  const u=document.getElementById('lu').value.trim();
+  const s=document.getElementById('ls').value;
+  if(!u||!s){lerro('Preencha usuario e senha');return;}
+  const r=await req('POST','/api/login',{user:u,senha:s});
+  if(r.ok){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  } else lerro(r.erro||'Erro ao entrar');
 }
-function loginErro(msg) { const el = document.getElementById('login-erro'); el.textContent = msg; el.style.display = 'block'; }
-async function fazerLogout() { await api('POST', '/api/logout'); location.reload(); }
-async function verificarAuth() {
-  const res = await api('GET', '/api/me');
-  if (res.logado) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('app').style.display = 'block'; iniciarApp(); }
+function lerro(m){const e=document.getElementById('le');e.textContent=m;e.style.display='block';}
+async function logout(){await req('POST','/api/logout');location.reload();}
+async function checkAuth(){
+  const r=await req('GET','/api/me');
+  if(r.logado){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  }
 }
-async function iniciarApp() { await Promise.all([carregarBots(), carregarFunis()]); carregarDashboard(); }
+async function init(){ await Promise.all([loadBots(),loadFunis()]); loadDash(); }
 
-function navTo(pagina) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + pagina).classList.add('active');
-  document.querySelector('.nav-item[data-page="' + pagina + '"]')?.classList.add('active');
-  if (pagina === 'dashboard') carregarDashboard();
-  if (pagina === 'bots') carregarBots();
-  if (pagina === 'funis') carregarFunis();
+// NAV
+function nav(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelector('.ni[data-p="'+p+'"]')?.classList.add('active');
+  if(p==='dashboard')loadDash();
+  if(p==='bots')loadBots();
+  if(p==='funis')loadFunis();
 }
 
-async function carregarDashboard() {
-  const [stats, bots, status] = await Promise.all([api('GET', '/api/dashboard'), api('GET', '/api/bots'), api('GET', '/api/status')]);
-  document.getElementById('stat-total').textContent = stats.totalBots || 0;
-  document.getElementById('stat-online').textContent = stats.botsOnline || 0;
-  document.getElementById('stat-offline').textContent = (stats.totalBots - stats.botsOnline) || 0;
-  document.getElementById('stat-midias').textContent = stats.totalMidias || 0;
-  document.getElementById('stat-funis').textContent = stats.totalFunis || 0;
-  document.getElementById('stat-conversas').textContent = stats.totalConversas || 0;
-  const tbody = document.getElementById('dashboard-lista');
-  if (!bots.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><p>Nenhum bot cadastrado</p></div></td></tr>'; return; }
-  tbody.innerHTML = bots.map(b => {
-    const online = !!status[b.id];
-    const ultima = b.ultimaMsg ? new Date(b.ultimaMsg).toLocaleString('pt-BR') : '—';
-    return `<tr>
-      <td><div class="bot-name-cell"><div class="avatar-placeholder">${b.nome[0]}</div><span>${b.nome}</span></div></td>
-      <td style="color:var(--muted);font-size:12px">${b.cidade} · ${b.idade} anos</td>
-      <td>${b.funil ? b.funil.nome : '<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="badge badge-purple">${b._count?.midias || 0} midias</span></td>
-      <td style="font-size:12px;color:var(--muted)">${ultima}</td>
-      <td><span class="badge ${online ? 'badge-green' : 'badge-red'}"><span class="dot"></span>${online ? 'Online' : 'Offline'}</span></td>
+// DASHBOARD
+async function loadDash(){
+  const [st,b,ss]=await Promise.all([req('GET','/api/dashboard'),req('GET','/api/bots'),req('GET','/api/status')]);
+  document.getElementById('s-total').textContent=st.totalBots||0;
+  document.getElementById('s-online').textContent=st.botsOnline||0;
+  document.getElementById('s-offline').textContent=(st.totalBots-st.botsOnline)||0;
+  document.getElementById('s-midias').textContent=st.totalMidias||0;
+  document.getElementById('s-funis').textContent=st.totalFunis||0;
+  document.getElementById('s-conv').textContent=st.totalConversas||0;
+  const tb=document.getElementById('dash-tb');
+  if(!b.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Nenhum bot cadastrado</div></td></tr>';return;}
+  tb.innerHTML=b.map(x=>{
+    const on=!!ss[x.id];
+    const ul=x.ultimaMsg?new Date(x.ultimaMsg).toLocaleString('pt-BR'):'—';
+    return`<tr>
+      <td><div class="nc"><div class="av">${x.nome[0]}</div>${x.nome}</div></td>
+      <td style="font-size:12px;color:var(--muted)">${x.cidade} · ${x.idade} anos</td>
+      <td>${x.funil?x.funil.nome:'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="badge bg-purple">${x._count?.midias||0} midias</span></td>
+      <td style="font-size:12px;color:var(--muted)">${ul}</td>
+      <td><span class="badge ${on?'bg-green':'bg-red'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
     </tr>`;
   }).join('');
 }
 
-async function carregarBots() {
-  const [bots, status, funis] = await Promise.all([api('GET', '/api/bots'), api('GET', '/api/status'), api('GET', '/api/funis')]);
-  botsData = bots; funisData = funis;
-  const tbody = document.getElementById('bots-lista');
-  if (!bots.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><p>Nenhum bot. Clique em "+ Novo Bot".</p></div></td></tr>'; return; }
-  tbody.innerHTML = bots.map(b => {
-    const online = !!status[b.id];
-    return `<tr>
-      <td><div class="bot-name-cell"><div class="avatar-placeholder">${b.nome[0]}</div><span>${b.nome}</span></div></td>
-      <td style="font-size:12px;color:var(--muted)">${b.cidade} · ${b.idade} anos</td>
-      <td>${b.funil ? b.funil.nome : '<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="badge badge-purple">${b._count?.midias || 0}</span></td>
-      <td><span class="badge ${online ? 'badge-green' : 'badge-red'}"><span class="dot"></span>${online ? 'Online' : 'Offline'}</span></td>
-      <td><div class="td-actions">
-        <button class="btn btn-sm ${online ? 'btn-danger' : 'btn-green'}" onclick="toggleBot(${b.id})">${online ? 'Desligar' : 'Ligar'}</button>
-        <button class="btn btn-sm btn-secondary" onclick="abrirDetalheBot(${b.id})">Midias</button>
-        <button class="btn btn-sm btn-secondary" onclick="editarBot(${b.id})">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deletarBot(${b.id})">Excluir</button>
+// BOTS
+async function loadBots(){
+  const [b,ss,f]=await Promise.all([req('GET','/api/bots'),req('GET','/api/status'),req('GET','/api/funis')]);
+  bots=b; funis=f;
+  const tb=document.getElementById('bots-tb');
+  if(!b.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Nenhum bot. Clique em "+ Novo Bot" para comecar.</div></td></tr>';return;}
+  tb.innerHTML=b.map(x=>{
+    const on=!!ss[x.id];
+    return`<tr>
+      <td><div class="nc"><div class="av">${x.nome[0]}</div>${x.nome}</div></td>
+      <td style="font-size:12px;color:var(--muted)">${x.cidade} · ${x.idade} anos</td>
+      <td>${x.funil?x.funil.nome:'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="badge bg-purple">${x._count?.midias||0}</span></td>
+      <td><span class="badge ${on?'bg-green':'bg-red'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
+      <td><div class="actions">
+        <button class="btn bsm ${on?'bd':'bg'}" onclick="toggle(${x.id})">${on?'Desligar':'Ligar'}</button>
+        <button class="btn bs bsm" onclick="openDetail(${x.id})">Midias</button>
+        <button class="btn bs bsm" onclick="editBot(${x.id})">Editar</button>
+        <button class="btn bd bsm" onclick="delBot(${x.id})">Excluir</button>
       </div></td>
     </tr>`;
   }).join('');
 }
 
-function abrirModalBot(bot) {
-  document.getElementById('bot-id').value = '';
-  document.getElementById('bot-nome').value = '';
-  document.getElementById('bot-idade').value = 24;
-  document.getElementById('bot-cidade').value = '';
-  document.getElementById('bot-token').value = '';
-  document.getElementById('bot-grupo').value = '';
-  document.getElementById('modal-bot-titulo').textContent = 'Novo Bot';
-  const sel = document.getElementById('bot-funil');
-  sel.innerHTML = '<option value="">Sem funil</option>' + funisData.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-  if (bot) {
-    document.getElementById('modal-bot-titulo').textContent = 'Editar Bot';
-    document.getElementById('bot-id').value = bot.id;
-    document.getElementById('bot-nome').value = bot.nome;
-    document.getElementById('bot-idade').value = bot.idade;
-    document.getElementById('bot-cidade').value = bot.cidade;
-    document.getElementById('bot-token').value = bot.token;
-    document.getElementById('bot-grupo').value = bot.grupoId;
-    if (bot.funilId) sel.value = bot.funilId;
+function openBot(bot){
+  document.getElementById('bot-id').value='';
+  document.getElementById('bot-nome').value='';
+  document.getElementById('bot-idade').value=24;
+  document.getElementById('bot-cidade').value='';
+  document.getElementById('bot-token').value='';
+  document.getElementById('bot-grupo').value='';
+  document.getElementById('mbot-titulo').textContent='Novo Bot';
+  const sel=document.getElementById('bot-funil');
+  sel.innerHTML='<option value="">Sem funil</option>'+funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  if(bot){
+    document.getElementById('mbot-titulo').textContent='Editar Bot';
+    document.getElementById('bot-id').value=bot.id;
+    document.getElementById('bot-nome').value=bot.nome;
+    document.getElementById('bot-idade').value=bot.idade;
+    document.getElementById('bot-cidade').value=bot.cidade;
+    document.getElementById('bot-token').value=bot.token;
+    document.getElementById('bot-grupo').value=bot.grupoId;
+    if(bot.funilId)sel.value=bot.funilId;
   }
-  abrirModal('modal-bot');
+  openM('mo-bot');
 }
-function editarBot(id) { abrirModalBot(botsData.find(b => b.id === id)); }
+function editBot(id){openBot(bots.find(b=>b.id===id));}
 
-async function salvarBot() {
-  const id = document.getElementById('bot-id').value;
-  const nome = document.getElementById('bot-nome').value.trim();
-  const idade = document.getElementById('bot-idade').value;
-  const cidade = document.getElementById('bot-cidade').value.trim();
-  const token = document.getElementById('bot-token').value.trim();
-  const grupoId = document.getElementById('bot-grupo').value.trim();
-  const funilId = document.getElementById('bot-funil').value;
-  if (!nome || !token || !grupoId) { toast('Preencha nome, token e grupo', 'error'); return; }
-  const body = { nome, idade, cidade: cidade || 'Sao Paulo', token, grupoId, funilId };
-  const res = id ? await api('PUT', `/api/bots/${id}`, { ...body, ativo: true }) : await api('POST', '/api/bots', body);
-  if (res.erro) { toast(res.erro, 'error'); return; }
-  toast(id ? 'Bot atualizado!' : 'Bot criado!', 'success');
-  fecharModal('modal-bot'); carregarBots(); carregarDashboard();
-}
-
-async function toggleBot(id) {
-  const res = await api('POST', `/api/bots/${id}/toggle`);
-  toast(res.ativo ? 'Bot ligado!' : 'Bot desligado!', 'success');
-  carregarBots(); carregarDashboard();
+async function saveBot(){
+  const id=document.getElementById('bot-id').value;
+  const nome=document.getElementById('bot-nome').value.trim();
+  const idade=document.getElementById('bot-idade').value;
+  const cidade=document.getElementById('bot-cidade').value.trim()||'Sao Paulo';
+  const token=document.getElementById('bot-token').value.trim();
+  const grupoId=document.getElementById('bot-grupo').value.trim();
+  const funilId=document.getElementById('bot-funil').value;
+  if(!nome||!token||!grupoId){toast('Preencha nome, token e ID do grupo','err');return;}
+  const body={nome,idade,cidade,token,grupoId,funilId};
+  const r=id?await req('PUT','/api/bots/'+id,{...body,ativo:true}):await req('POST','/api/bots',body);
+  if(r.erro){toast(r.erro,'err');return;}
+  toast(id?'Bot atualizado!':'Bot criado! Agora adicione midias a ele.','ok');
+  closeM('mo-bot'); loadBots(); loadDash();
 }
 
-async function deletarBot(id) {
-  if (!confirm('Excluir este bot e todas as suas midias?')) return;
-  await api('DELETE', `/api/bots/${id}`);
-  toast('Bot excluido', 'success'); carregarBots(); carregarDashboard();
+async function toggle(id){
+  const r=await req('POST','/api/bots/'+id+'/toggle');
+  toast(r.ativo?'Bot ligado!':'Bot desligado!','ok');
+  loadBots(); loadDash();
 }
 
-async function abrirDetalheBot(id) {
-  botDetalheId = id;
-  const bot = botsData.find(b => b.id === id);
-  document.getElementById('detail-nome').textContent = bot.nome;
-  document.getElementById('detail-sub').textContent = bot.cidade + ' · ' + bot.idade + ' anos';
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-bot-detail').classList.add('active');
-  trocarTab('apresentacao');
-  await carregarMidias();
+async function delBot(id){
+  if(!confirm('Excluir este bot e todas as midias?'))return;
+  await req('DELETE','/api/bots/'+id);
+  toast('Bot excluido','ok'); loadBots(); loadDash();
 }
 
-function trocarTab(cat) {
-  categoriaAtiva = cat;
-  const cats = ['apresentacao', 'rotina', 'interacao', 'chamada_pvt'];
-  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', cats[i] === cat));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + cat).classList.add('active');
+// DETALHE / MIDIAS
+async function openDetail(id){
+  detBot=id;
+  const b=bots.find(x=>x.id===id);
+  document.getElementById('det-nome').textContent=b.nome;
+  document.getElementById('det-sub').textContent=b.cidade+' · '+b.idade+' anos · Midias postadas no grupo';
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-detail').classList.add('active');
+  tab('apresentacao');
+  await loadMidias();
 }
 
-async function carregarMidias() {
-  if (!botDetalheId) return;
-  const midias = await api('GET', `/api/bots/${botDetalheId}/midias`);
-  const cats = ['apresentacao', 'rotina', 'interacao', 'chamada_pvt'];
-  for (const cat of cats) {
-    const grid = document.getElementById('midias-' + cat);
-    const lista = midias.filter(m => m.categoria === cat);
-    if (!lista.length) { grid.innerHTML = '<div class="empty"><p>Sem midias. Clique em "+ Adicionar Midia".</p></div>'; continue; }
-    grid.innerHTML = lista.map(m => `
-      <div class="midia-card">
-        <div class="midia-top">
-          <span class="badge badge-blue">${m.tipo}</span>
-          <div class="td-actions">
-            <button class="btn btn-sm btn-secondary" onclick="editarMidia(${m.id})">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="deletarMidia(${m.id})">X</button>
+function tab(c){
+  catAtiva=c;
+  const cats=['apresentacao','rotina','interacao','chamada_pvt'];
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',cats[i]===c));
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tc-'+c).classList.add('active');
+}
+
+async function loadMidias(){
+  if(!detBot)return;
+  const ms=await req('GET','/api/bots/'+detBot+'/midias');
+  ['apresentacao','rotina','interacao','chamada_pvt'].forEach(c=>{
+    const g=document.getElementById('mg-'+c);
+    const lst=ms.filter(m=>m.categoria===c);
+    if(!lst.length){g.innerHTML='<div class="empty">Nenhuma midia nesta categoria.<br>Clique em "+ Adicionar Midia" e selecione esta categoria.</div>';return;}
+    g.innerHTML=lst.map(m=>`
+      <div class="mc2">
+        <div class="mc2-top">
+          <span class="badge bg-blue">${m.tipo}</span>
+          <div class="actions">
+            <button class="btn bs bsm" onclick="editMidia(${m.id})">Editar</button>
+            <button class="btn bd bsm" onclick="delMidia(${m.id})">X</button>
           </div>
         </div>
-        ${m.tipo === 'foto' && m.url ? `<img src="${m.url}" class="midia-preview" onerror="this.style.display='none'" />` : ''}
-        ${m.url ? `<p style="font-size:11px;color:var(--muted);word-break:break-all">${m.url.substring(0,60)}${m.url.length>60?'...':''}</p>` : ''}
-        <p style="font-size:12px;color:var(--text)">${m.legenda ? m.legenda.substring(0,100) + (m.legenda.length>100?'...':'') : '<span style="color:var(--muted)">Sem legenda</span>'}</p>
+        ${m.tipo==='foto'&&m.url?`<img src="${m.url}" class="mimg" onerror="this.style.display='none'" />`:''}
+        ${m.url?`<p style="font-size:11px;color:var(--muted);word-break:break-all">${m.url.length>55?m.url.substring(0,55)+'...':m.url}</p>`:''}
+        <p style="font-size:12px">${m.legenda||'<span style="color:var(--muted)">Sem legenda</span>'}</p>
       </div>`).join('');
+  });
+}
+
+function openMidia(m){
+  document.getElementById('mid-id').value='';
+  document.getElementById('mid-cat').value=catAtiva;
+  document.getElementById('mid-tipo').value='foto';
+  document.getElementById('mid-url').value='';
+  document.getElementById('mid-leg').value='';
+  document.getElementById('mmid-titulo').textContent='Adicionar Midia';
+  document.getElementById('url-group').style.display='block';
+  if(m){
+    document.getElementById('mmid-titulo').textContent='Editar Midia';
+    document.getElementById('mid-id').value=m.id;
+    document.getElementById('mid-cat').value=m.categoria;
+    document.getElementById('mid-tipo').value=m.tipo;
+    document.getElementById('mid-url').value=m.url||'';
+    document.getElementById('mid-leg').value=m.legenda||'';
+    document.getElementById('url-group').style.display=m.tipo==='texto'?'none':'block';
   }
+  openM('mo-midia');
+}
+function toggleUrl(){document.getElementById('url-group').style.display=document.getElementById('mid-tipo').value==='texto'?'none':'block';}
+
+async function editMidia(id){
+  const ms=await req('GET','/api/bots/'+detBot+'/midias');
+  const m=ms.find(x=>x.id===id);
+  if(m)openMidia(m);
 }
 
-function toggleUrlField() {
-  const tipo = document.getElementById('midia-tipo').value;
-  document.getElementById('midia-url-group').style.display = tipo === 'texto' ? 'none' : 'block';
+async function saveMidia(){
+  const id=document.getElementById('mid-id').value;
+  const categoria=document.getElementById('mid-cat').value;
+  const tipo=document.getElementById('mid-tipo').value;
+  const url=document.getElementById('mid-url').value.trim();
+  const legenda=document.getElementById('mid-leg').value.trim();
+  if(tipo!=='texto'&&!url){toast('Informe a URL da midia','err');return;}
+  const body={categoria,tipo,url,legenda};
+  const r=id?await req('PUT','/api/midias/'+id,body):await req('POST','/api/bots/'+detBot+'/midias',body);
+  if(r.erro){toast(r.erro,'err');return;}
+  toast(id?'Midia atualizada!':'Midia adicionada!','ok');
+  closeM('mo-midia'); loadMidias(); loadDash();
 }
 
-async function editarMidia(id) {
-  const midias = await api('GET', `/api/bots/${botDetalheId}/midias`);
-  const midia = midias.find(m => m.id === id);
-  if (midia) abrirModalMidia(midia);
+async function delMidia(id){
+  if(!confirm('Excluir esta midia?'))return;
+  await req('DELETE','/api/midias/'+id);
+  toast('Midia excluida','ok'); loadMidias(); loadDash();
 }
 
-function abrirModalMidia(midia) {
-  document.getElementById('midia-id').value = '';
-  document.getElementById('midia-categoria').value = categoriaAtiva;
-  document.getElementById('midia-tipo').value = 'foto';
-  document.getElementById('midia-url').value = '';
-  document.getElementById('midia-legenda').value = '';
-  document.getElementById('modal-midia-titulo').textContent = 'Adicionar Midia';
-  document.getElementById('midia-url-group').style.display = 'block';
-  if (midia) {
-    document.getElementById('modal-midia-titulo').textContent = 'Editar Midia';
-    document.getElementById('midia-id').value = midia.id;
-    document.getElementById('midia-categoria').value = midia.categoria;
-    document.getElementById('midia-tipo').value = midia.tipo;
-    document.getElementById('midia-url').value = midia.url || '';
-    document.getElementById('midia-legenda').value = midia.legenda || '';
-    document.getElementById('midia-url-group').style.display = midia.tipo === 'texto' ? 'none' : 'block';
-  }
-  abrirModal('modal-midia');
-}
-
-async function salvarMidia() {
-  const id = document.getElementById('midia-id').value;
-  const categoria = document.getElementById('midia-categoria').value;
-  const tipo = document.getElementById('midia-tipo').value;
-  const url = document.getElementById('midia-url').value.trim();
-  const legenda = document.getElementById('midia-legenda').value.trim();
-  if (tipo !== 'texto' && !url) { toast('Informe a URL da midia', 'error'); return; }
-  const body = { categoria, tipo, url, legenda };
-  const res = id ? await api('PUT', `/api/midias/${id}`, body) : await api('POST', `/api/bots/${botDetalheId}/midias`, body);
-  if (res.erro) { toast(res.erro, 'error'); return; }
-  toast(id ? 'Midia atualizada!' : 'Midia adicionada!', 'success');
-  fecharModal('modal-midia'); carregarMidias(); carregarDashboard();
-}
-
-async function deletarMidia(id) {
-  if (!confirm('Excluir esta midia?')) return;
-  await api('DELETE', `/api/midias/${id}`);
-  toast('Midia excluida', 'success'); carregarMidias(); carregarDashboard();
-}
-
-async function carregarFunis() {
-  funisData = await api('GET', '/api/funis');
-  const grid = document.getElementById('funis-grid');
-  if (!funisData.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><p>Nenhum funil criado.</p></div>'; return; }
-  grid.innerHTML = funisData.map(f => `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-        <div><div style="font-weight:600;margin-bottom:3px">${f.nome}</div><div style="font-size:12px;color:var(--muted)">${f.descricao || 'Sem descricao'}</div></div>
-        <span class="badge badge-yellow">${f.passos.length} passo${f.passos.length!==1?'s':''}</span>
+// FUNIS
+async function loadFunis(){
+  funis=await req('GET','/api/funis');
+  const g=document.getElementById('funis-grid');
+  if(!funis.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum funil. Clique em "+ Novo Funil".</div>';return;}
+  g.innerHTML=funis.map(f=>`
+    <div class="fc">
+      <div class="fc-head">
+        <div><div class="fc-nome">${f.nome}</div><div class="fc-desc">${f.descricao||'Sem descricao'}</div></div>
+        <span class="badge bg-yellow">${f.passos.length} passo${f.passos.length!==1?'s':''}</span>
       </div>
-      <div style="margin-bottom:14px">
-        ${f.passos.slice(0,3).map((p,i) => `
-          <div style="padding:5px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center">
-            <span style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-weight:600;font-size:11px">${i+1}</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.texto || '(midia)'}</span>
-            ${p.mediaUrl ? '<span class="badge badge-purple" style="font-size:10px">+midia</span>' : ''}
+      <div style="margin-bottom:14px;">
+        ${f.passos.slice(0,3).map((p,i)=>`
+          <div class="passo-row">
+            <span class="passo-idx">${i+1}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.texto||'(midia)'}</span>
+            ${p.mediaUrl?'<span class="badge bg-purple" style="font-size:10px">+midia</span>':''}
           </div>`).join('')}
-        ${f.passos.length>3 ? `<div style="font-size:11px;color:var(--muted);padding-top:5px">+${f.passos.length-3} passos</div>` : ''}
+        ${f.passos.length>3?`<div style="font-size:11px;color:var(--muted);padding-top:6px">+${f.passos.length-3} mais...</div>`:''}
       </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-sm btn-secondary" style="flex:1" onclick="editarFunil(${f.id})">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deletarFunil(${f.id})">Excluir</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn bs bsm" style="flex:1" onclick="editFunil(${f.id})">Editar</button>
+        <button class="btn bd bsm" onclick="delFunil(${f.id})">Excluir</button>
       </div>
     </div>`).join('');
 }
 
-function abrirModalFunil(funil) {
-  passosEditor = [];
-  document.getElementById('funil-id').value = '';
-  document.getElementById('funil-nome').value = '';
-  document.getElementById('funil-descricao').value = '';
-  document.getElementById('modal-funil-titulo').textContent = 'Novo Funil';
-  if (funil) {
-    document.getElementById('modal-funil-titulo').textContent = 'Editar Funil';
-    document.getElementById('funil-id').value = funil.id;
-    document.getElementById('funil-nome').value = funil.nome;
-    document.getElementById('funil-descricao').value = funil.descricao || '';
-    passosEditor = funil.passos.map(p => ({ texto: p.texto||'', mediaUrl: p.mediaUrl||'', mediaTipo: p.mediaTipo||'foto', delay: p.delay||2 }));
+function openFunil(f){
+  passos=[];
+  document.getElementById('fun-id').value='';
+  document.getElementById('fun-nome').value='';
+  document.getElementById('fun-desc').value='';
+  document.getElementById('mfun-titulo').textContent='Novo Funil';
+  if(f){
+    document.getElementById('mfun-titulo').textContent='Editar Funil';
+    document.getElementById('fun-id').value=f.id;
+    document.getElementById('fun-nome').value=f.nome;
+    document.getElementById('fun-desc').value=f.descricao||'';
+    passos=f.passos.map(p=>({texto:p.texto||'',mediaUrl:p.mediaUrl||'',mediaTipo:p.mediaTipo||'foto',delay:p.delay||2}));
   }
-  renderPassos(); abrirModal('modal-funil');
+  renderPassos(); openM('mo-funil');
 }
-function editarFunil(id) { abrirModalFunil(funisData.find(f => f.id === id)); }
-function adicionarPasso() { passosEditor.push({ texto: '', mediaUrl: '', mediaTipo: 'foto', delay: 2 }); renderPassos(); }
-function removerPasso(i) { passosEditor.splice(i, 1); renderPassos(); }
-function atualizarPasso(i, campo, valor) { passosEditor[i][campo] = valor; }
+function editFunil(id){openFunil(funis.find(f=>f.id===id));}
+function addPasso(){passos.push({texto:'',mediaUrl:'',mediaTipo:'foto',delay:2});renderPassos();}
+function remPasso(i){passos.splice(i,1);renderPassos();}
+function upPasso(i,k,v){passos[i][k]=v;}
 
-function renderPassos() {
-  const lista = document.getElementById('passos-lista');
-  if (!passosEditor.length) { lista.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px">Nenhum passo ainda.</div>'; return; }
-  lista.innerHTML = passosEditor.map((p, i) => `
-    <div class="passo-card">
-      <div class="passo-header"><span class="passo-num">PASSO ${i+1}</span><button class="btn btn-sm btn-danger" onclick="removerPasso(${i})">Remover</button></div>
-      <div class="form-group" style="margin-bottom:8px">
-        <label style="font-size:11px">Texto (use {nome}, {cidade}, {idade})</label>
-        <textarea style="min-height:52px" onchange="atualizarPasso(${i},'texto',this.value)">${p.texto}</textarea>
-      </div>
-      <div class="grid-2" style="gap:8px">
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:11px">URL de Midia (opcional)</label>
-          <input type="text" placeholder="https://..." value="${p.mediaUrl}" onchange="atualizarPasso(${i},'mediaUrl',this.value)" />
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:11px">Tipo da Midia</label>
-          <select onchange="atualizarPasso(${i},'mediaTipo',this.value)">
+function renderPassos(){
+  const l=document.getElementById('passos-lista');
+  if(!passos.length){l.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Nenhum passo. Clique em "+ Adicionar Passo".</div>';return;}
+  l.innerHTML=passos.map((p,i)=>`
+    <div class="pc">
+      <div class="pc-h"><span class="pn">PASSO ${i+1}</span><button class="btn bd bsm" onclick="remPasso(${i})">Remover</button></div>
+      <div class="fg" style="margin-bottom:8px"><label style="font-size:11px">Texto (variaveis: {nome} {idade} {cidade})</label>
+        <textarea style="min-height:52px" onchange="upPasso(${i},'texto',this.value)">${p.texto}</textarea></div>
+      <div class="g2" style="gap:8px">
+        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">URL de Midia (opcional)</label>
+          <input type="text" placeholder="https://..." value="${p.mediaUrl}" onchange="upPasso(${i},'mediaUrl',this.value)" /></div>
+        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">Tipo</label>
+          <select onchange="upPasso(${i},'mediaTipo',this.value)">
             <option value="foto" ${p.mediaTipo==='foto'?'selected':''}>Foto</option>
             <option value="video" ${p.mediaTipo==='video'?'selected':''}>Video</option>
             <option value="audio" ${p.mediaTipo==='audio'?'selected':''}>Audio</option>
-          </select>
-        </div>
+          </select></div>
       </div>
-      <div class="form-group" style="margin-top:8px;margin-bottom:0">
-        <label style="font-size:11px">Delay antes de enviar (segundos)</label>
-        <input type="number" value="${p.delay}" min="0" max="15" style="max-width:80px" onchange="atualizarPasso(${i},'delay',this.value)" />
-      </div>
+      <div class="fg" style="margin-top:8px;margin-bottom:0"><label style="font-size:11px">Delay (segundos antes de enviar)</label>
+        <input type="number" value="${p.delay}" min="0" max="15" style="max-width:80px" onchange="upPasso(${i},'delay',this.value)" /></div>
     </div>`).join('');
 }
 
-async function salvarFunil() {
-  const id = document.getElementById('funil-id').value;
-  const nome = document.getElementById('funil-nome').value.trim();
-  const descricao = document.getElementById('funil-descricao').value.trim();
-  if (!nome) { toast('Informe o nome do funil', 'error'); return; }
-  if (!passosEditor.length) { toast('Adicione pelo menos um passo', 'error'); return; }
-  document.querySelectorAll('#passos-lista textarea').forEach((el, i) => { if (passosEditor[i]) passosEditor[i].texto = el.value; });
-  const body = { nome, descricao, passos: passosEditor };
-  const res = id ? await api('PUT', `/api/funis/${id}`, body) : await api('POST', '/api/funis', body);
-  if (res.erro) { toast(res.erro, 'error'); return; }
-  toast(id ? 'Funil atualizado!' : 'Funil criado!', 'success');
-  fecharModal('modal-funil'); carregarFunis();
+async function saveFunil(){
+  const id=document.getElementById('fun-id').value;
+  const nome=document.getElementById('fun-nome').value.trim();
+  const descricao=document.getElementById('fun-desc').value.trim();
+  if(!nome){toast('Informe o nome do funil','err');return;}
+  if(!passos.length){toast('Adicione pelo menos um passo','err');return;}
+  document.querySelectorAll('#passos-lista textarea').forEach((el,i)=>{if(passos[i])passos[i].texto=el.value;});
+  const body={nome,descricao,passos};
+  const r=id?await req('PUT','/api/funis/'+id,body):await req('POST','/api/funis',body);
+  if(r.erro){toast(r.erro,'err');return;}
+  toast(id?'Funil atualizado!':'Funil criado!','ok');
+  closeM('mo-funil'); loadFunis();
 }
 
-async function deletarFunil(id) {
-  if (!confirm('Excluir este funil?')) return;
-  await api('DELETE', `/api/funis/${id}`);
-  toast('Funil excluido', 'success'); carregarFunis();
+async function delFunil(id){
+  if(!confirm('Excluir este funil?'))return;
+  await req('DELETE','/api/funis/'+id);
+  toast('Funil excluido','ok'); loadFunis();
 }
 
-function abrirModal(id) { document.getElementById(id).classList.add('open'); }
-function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
-function toast(msg, tipo) { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'show ' + (tipo||'success'); setTimeout(() => el.classList.remove('show'), 3000); }
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+// UTILS
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+function toast(msg,tipo){const e=document.getElementById('toast');e.textContent=msg;e.className='show '+(tipo||'ok');setTimeout(()=>e.classList.remove('show'),3000);}
+document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-verificarAuth();
+checkAuth();
 </script>
 </body>
 </html>
