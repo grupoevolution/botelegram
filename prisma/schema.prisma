@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bot {
+  id           Int       @id @default(autoincrement())
+  nome         String
+  token        String    @unique
+  grupoId      String
+  ativo        Boolean   @default(true)
+  fotoPerfil   String?
+  apresentacao String?
+  intervalMin  Int       @default(30)
+  intervalMax  Int       @default(90)
+  ultimaMsg    DateTime?
+  criadoEm     DateTime  @default(now())
+  funilId      Int?
+  funil        Funil?    @relation(fields: [funilId], references: [id])
+}
+
+model Funil {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  bots      Bot[]
+  passos    Passo[]
+  criadoEm  DateTime @default(now())
+}
+
+model Passo {
+  id       Int      @id @default(autoincrement())
+  funilId  Int
+  funil    Funil    @relation(fields: [funilId], references: [id], onDelete: Cascade)
+  ordem    Int
+  mensagem String
+  tipo     String   @default("texto")
+  botoes   Json?
+  criadoEm DateTime @default(now())
+}
+
+model Admin {
+  id    Int    @id @default(autoincrement())
+  user  String @unique
+  senha String
+}
