@@ -8,19 +8,30 @@ datasource db {
 }
 
 model Bot {
-  id           Int       @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   nome         String
-  token        String    @unique
+  idade        Int        @default(24)
+  cidade       String     @default("Sao Paulo")
+  token        String     @unique
   grupoId      String
-  ativo        Boolean   @default(true)
-  fotoPerfil   String?
-  apresentacao String?
-  intervalMin  Int       @default(30)
-  intervalMax  Int       @default(90)
+  ativo        Boolean    @default(true)
   ultimaMsg    DateTime?
-  criadoEm     DateTime  @default(now())
+  criadoEm     DateTime   @default(now())
   funilId      Int?
-  funil        Funil?    @relation(fields: [funilId], references: [id])
+  funil        Funil?     @relation(fields: [funilId], references: [id])
+  midias       Midia[]
+  conversas    Conversa[]
+}
+
+model Midia {
+  id        Int      @id @default(autoincrement())
+  botId     Int
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  categoria String
+  tipo      String
+  url       String?
+  legenda   String?
+  criadoEm  DateTime @default(now())
 }
 
 model Funil {
@@ -33,14 +44,27 @@ model Funil {
 }
 
 model Passo {
-  id       Int      @id @default(autoincrement())
-  funilId  Int
-  funil    Funil    @relation(fields: [funilId], references: [id], onDelete: Cascade)
-  ordem    Int
-  mensagem String
-  tipo     String   @default("texto")
-  botoes   String?
-  criadoEm DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  funilId   Int
+  funil     Funil    @relation(fields: [funilId], references: [id], onDelete: Cascade)
+  ordem     Int
+  texto     String?
+  mediaUrl  String?
+  mediaTipo String?
+  delay     Int      @default(2)
+  criadoEm  DateTime @default(now())
+}
+
+model Conversa {
+  id           Int      @id @default(autoincrement())
+  botId        Int
+  bot          Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  telegramId   String
+  passoAtual   Int      @default(0)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now())
+
+  @@unique([botId, telegramId])
 }
 
 model Admin {
