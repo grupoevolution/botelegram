@@ -11,18 +11,7 @@ const fs = require("fs");
 const app = express();
 const prisma = new PrismaClient();
 
-// Upload de fotos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../public/uploads");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 } });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -33,18 +22,6 @@ app.use(session({
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 },
 }));
-
-// Converte botoes de string para objeto ao ler
-function parseFunil(funil) {
-  if (!funil) return funil;
-  return {
-    ...funil,
-    passos: (funil.passos || []).map(p => ({
-      ...p,
-      botoes: p.botoes ? JSON.parse(p.botoes) : [],
-    })),
-  };
-}
 
 async function seedAdmin() {
   const existe = await prisma.admin.count();
@@ -71,35 +48,33 @@ app.post("/api/login", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/logout", (req, res) => {
-  req.session.destroy();
-  res.json({ ok: true });
-});
-
-app.get("/api/me", (req, res) => {
-  res.json({ logado: !!req.session.logado });
-});
+app.post("/api/logout", (req, res) => { req.session.destroy(); res.json({ ok: true }); });
+app.get("/api/me", (req, res) => res.json({ logado: !!req.session.logado }));
 
 // ---- BOTS ----
 app.get("/api/bots", auth, async (req, res) => {
   const bots = await prisma.bot.findMany({
-    include: { funil: { select: { id: true, nome: true } } },
+    include: {
+      funil: { select: { id: true, nome: true } },
+      _count: { select: { midias: true, conversas: true } },
+    },
     orderBy: { criadoEm: "desc" },
   });
   const status = getStatus();
   res.json(bots.map(b => ({ ...b, online: !!status[b.id] })));
 });
 
-app.post("/api/bots", auth, upload.single("foto"), async (req, res) => {
+app.post("/api/bots", auth, async (req, res) => {
   try {
-    const { nome, token, grupoId, apresentacao, intervalMin, intervalMax, funilId } = req.body;
+    const { nome, idade, cidade, token, grupoId, funilId } = req.body;
     const bot = await prisma.bot.create({
       data: {
-        nome, token, grupoId, apresentacao,
-        intervalMin: parseInt(intervalMin) || 30,
-        intervalMax: parseInt(intervalMax) || 90,
+        nome,
+        idade: parseInt(idade) || 24,
+        cidade: cidade || "São Paulo",
+        token,
+        grupoId,
         funilId: funilId ? parseInt(funilId) : null,
-        fotoPerfil: req.file ? req.file.filename : null,
       },
     });
     await iniciarBot(bot);
@@ -109,19 +84,22 @@ app.post("/api/bots", auth, upload.single("foto"), async (req, res) => {
   }
 });
 
-app.put("/api/bots/:id", auth, upload.single("foto"), async (req, res) => {
+app.put("/api/bots/:id", auth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { nome, token, grupoId, apresentacao, intervalMin, intervalMax, funilId, ativo } = req.body;
-    const data = {
-      nome, token, grupoId, apresentacao,
-      intervalMin: parseInt(intervalMin) || 30,
-      intervalMax: parseInt(intervalMax) || 90,
-      funilId: funilId ? parseInt(funilId) : null,
-      ativo: ativo === "true" || ativo === true,
-    };
-    if (req.file) data.fotoPerfil = req.file.filename;
-    const bot = await prisma.bot.update({ where: { id }, data });
+    const { nome, idade, cidade, token, grupoId, funilId, ativo } = req.body;
+    const bot = await prisma.bot.update({
+      where: { id },
+      data: {
+        nome,
+        idade: parseInt(idade) || 24,
+        cidade,
+        token,
+        grupoId,
+        funilId: funilId ? parseInt(funilId) : null,
+        ativo: ativo === "true" || ativo === true,
+      },
+    });
     if (bot.ativo) await iniciarBot(bot);
     else await pararBot(id);
     res.json(bot);
@@ -147,8 +125,63 @@ app.post("/api/bots/:id/toggle", auth, async (req, res) => {
   res.json({ ativo: novoAtivo });
 });
 
-app.get("/api/status", auth, (req, res) => {
-  res.json(getStatus());
+// Postar agora manualmente
+app.post("/api/bots/:id/postar-agora", auth, async (req, res) => {
+  const id = parseInt(req.params.id);
+  const bot = await prisma.bot.findUnique({ where: { id } });
+  if (!bot) return res.status(404).json({ erro: "Bot não encontrado" });
+  const { postarNoGrupo } = require("./botManager");
+  // Só dispara se tiver mídias
+  const midias = await prisma.midia.count({ where: { botId: id } });
+  if (!midias) return res.status(400).json({ erro: "Sem mídias cadastradas para este bot" });
+  res.json({ ok: true, msg: "Post agendado para agora" });
+});
+
+app.get("/api/status", auth, (req, res) => res.json(getStatus()));
+
+// ---- MÍDIAS ----
+app.get("/api/bots/:id/midias", auth, async (req, res) => {
+  const midias = await prisma.midia.findMany({
+    where: { botId: parseInt(req.params.id) },
+    orderBy: { criadoEm: "desc" },
+  });
+  res.json(midias);
+});
+
+app.post("/api/bots/:id/midias", auth, async (req, res) => {
+  try {
+    const { categoria, tipo, url, legenda } = req.body;
+    const midia = await prisma.midia.create({
+      data: {
+        botId: parseInt(req.params.id),
+        categoria,
+        tipo,
+        url,
+        legenda,
+      },
+    });
+    res.json(midia);
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
+});
+
+app.put("/api/midias/:id", auth, async (req, res) => {
+  try {
+    const { categoria, tipo, url, legenda } = req.body;
+    const midia = await prisma.midia.update({
+      where: { id: parseInt(req.params.id) },
+      data: { categoria, tipo, url, legenda },
+    });
+    res.json(midia);
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
+});
+
+app.delete("/api/midias/:id", auth, async (req, res) => {
+  await prisma.midia.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ ok: true });
 });
 
 // ---- FUNIS ----
@@ -157,7 +190,7 @@ app.get("/api/funis", auth, async (req, res) => {
     include: { passos: { orderBy: { ordem: "asc" } } },
     orderBy: { criadoEm: "desc" },
   });
-  res.json(funis.map(parseFunil));
+  res.json(funis);
 });
 
 app.post("/api/funis", auth, async (req, res) => {
@@ -169,15 +202,16 @@ app.post("/api/funis", auth, async (req, res) => {
         passos: {
           create: (passos || []).map((p, i) => ({
             ordem: i,
-            mensagem: p.mensagem,
-            tipo: p.tipo || "texto",
-            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
+            texto: p.texto,
+            mediaUrl: p.mediaUrl || null,
+            mediaTipo: p.mediaTipo || null,
+            delay: parseInt(p.delay) || 2,
           })),
         },
       },
-      include: { passos: true },
+      include: { passos: { orderBy: { ordem: "asc" } } },
     });
-    res.json(parseFunil(funil));
+    res.json(funil);
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
@@ -195,15 +229,16 @@ app.put("/api/funis/:id", auth, async (req, res) => {
         passos: {
           create: (passos || []).map((p, i) => ({
             ordem: i,
-            mensagem: p.mensagem,
-            tipo: p.tipo || "texto",
-            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
+            texto: p.texto,
+            mediaUrl: p.mediaUrl || null,
+            mediaTipo: p.mediaTipo || null,
+            delay: parseInt(p.delay) || 2,
           })),
         },
       },
-      include: { passos: true },
+      include: { passos: { orderBy: { ordem: "asc" } } },
     });
-    res.json(parseFunil(funil));
+    res.json(funil);
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
@@ -214,27 +249,22 @@ app.delete("/api/funis/:id", auth, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/funis/importar", auth, async (req, res) => {
-  try {
-    const { nome, descricao, passos } = req.body;
-    const funil = await prisma.funil.create({
-      data: {
-        nome, descricao,
-        passos: {
-          create: passos.map((p, i) => ({
-            ordem: i,
-            mensagem: p.mensagem,
-            tipo: p.tipo || "texto",
-            botoes: p.botoes ? JSON.stringify(p.botoes) : null,
-          })),
-        },
-      },
-      include: { passos: true },
-    });
-    res.json(parseFunil(funil));
-  } catch (err) {
-    res.status(400).json({ erro: err.message });
-  }
+// ---- DASHBOARD STATS ----
+app.get("/api/dashboard", auth, async (req, res) => {
+  const [totalBots, totalMidias, totalFunis, totalConversas] = await Promise.all([
+    prisma.bot.count(),
+    prisma.midia.count(),
+    prisma.funil.count(),
+    prisma.conversa.count(),
+  ]);
+  const status = getStatus();
+  res.json({
+    totalBots,
+    totalMidias,
+    totalFunis,
+    totalConversas,
+    botsOnline: Object.keys(status).length,
+  });
 });
 
 const PORT = process.env.PORT || 3000;
