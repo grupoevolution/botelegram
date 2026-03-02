@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Bot Manager</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222536;
+      --border: #2e3347;
+      --primary: #4f8ef7;
+      --primary-dark: #3a6fd8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* LOGIN */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 48px 40px; width: 100%; max-width: 400px;
+    }
+    .login-box h1 { font-size: 22px; margin-bottom: 8px; }
+    .login-box p { color: var(--muted); margin-bottom: 32px; font-size: 14px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px; color: var(--text);
+      font-size: 14px; outline: none; transition: border 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* LAYOUT */
+    #app { display: none; }
+    .layout { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 24px 0; flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 0 20px 24px; font-size: 16px; font-weight: 700;
+      border-bottom: 1px solid var(--border); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px; color: var(--primary);
+    }
+    .sidebar-logo svg { width: 24px; height: 24px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      cursor: pointer; font-size: 14px; color: var(--muted); transition: all 0.15s;
+      border-left: 3px solid transparent; margin: 2px 0;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { color: var(--primary); background: rgba(79,142,247,0.08); border-left-color: var(--primary); }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .btn-logout {
+      width: 100%; background: transparent; border: 1px solid var(--border);
+      color: var(--muted); border-radius: var(--radius); padding: 8px;
+      cursor: pointer; font-size: 13px; transition: all 0.15s;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+    /* MAIN */
+    .main { flex: 1; overflow-y: auto; }
+    .page { display: none; padding: 32px; max-width: 1100px; }
+    .page.active { display: block; }
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-header h2 { font-size: 20px; font-weight: 600; }
+    .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* BOTÕES */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+      border-radius: var(--radius); font-size: 14px; cursor: pointer;
+      border: none; transition: all 0.15s; font-weight: 500;
+    }
+    .btn svg { width: 16px; height: 16px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--border); }
+    .btn-danger:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { opacity: 0.9; }
+
+    /* CARDS STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 28px; font-weight: 700; }
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.red { color: var(--red); }
+    .stat-card .value.blue { color: var(--primary); }
+
+    /* TABELA */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--surface2); }
+    th { padding: 12px 16px; text-align: left; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+    td { padding: 14px 16px; font-size: 14px; border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+      border-radius: 99px; font-size: 11px; font-weight: 600;
+    }
+    .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .td-actions { display: flex; gap: 6px; align-items: center; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+      padding: 28px;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h3 { font-size: 16px; font-weight: 600; }
+    .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; }
+    .modal-close:hover { color: var(--text); }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+    /* FUNIL EDITOR */
+    .passos-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .passo-card {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px;
+    }
+    .passo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .passo-numero { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .botoes-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .botao-item {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+    }
+    .botao-item input { background: none; border: none; color: var(--text); font-size: 13px; outline: none; }
+    .botao-item span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .botao-item select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+
+    /* UPLOAD FOTO */
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 20px; text-align: center; cursor: pointer; transition: border 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .upload-area:hover { border-color: var(--primary); }
+    .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-area p { color: var(--muted); font-size: 13px; }
+    .upload-preview { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin: 0 auto 8px; display: block; }
+
+    /* IMPORTAR JSON */
+    .import-area {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px;
+    }
+    .import-area textarea { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-family: monospace; font-size: 12px; width: 100%; min-height: 200px; resize: vertical; outline: none; }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 20px; font-size: 14px; opacity: 0; transition: opacity 0.3s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error { border-color: var(--red); color: var(--red); }
+
+    /* EMPTY STATE */
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.3; }
+    .empty p { font-size: 14px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .section-title { font-size: 13px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); object-fit: cover; }
+    .avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .bot-info { display: flex; align-items: center; gap: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>Telegram Bot Manager</h1>
+    <p>Faça login para acessar o painel</p>
+    <div class="form-group">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="admin" />
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()" />
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="fazerLogin()">Entrar</button>
+    <p id="login-erro" style="color:var(--red);font-size:13px;margin-top:12px;display:none"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Bot Manager
+      </div>
+      <nav>
+        <div class="nav-item active" onclick="navTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </div>
+        <div class="nav-item" onclick="navTo('bots')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Bots
+        </div>
+        <div class="nav-item" onclick="navTo('funis')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Funis
+        </div>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div><h2>Dashboard</h2><p>Visão geral dos seus bots</p></div>
+          <button class="btn btn-secondary btn-sm" onclick="carregarDashboard()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Atualizar
+          </button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="label">Total de Bots</div><div class="value blue" id="stat-total">0</div></div>
+          <div class="stat-card"><div class="label">Online</div><div class="value green" id="stat-online">0</div></div>
+          <div class="stat-card"><div class="label">Offline</div><div class="value red" id="stat-offline">0</div></div>
+          <div class="stat-card"><div class="label">Funis Criados</div><div class="value" id="stat-funis">0</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bot</th>
+                <th>Grupo ID</th>
+                <th>Funil</th>
+                <th>Intervalo</th>
+                <th>Última Msg</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-lista"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BOTS -->
+      <div class="page" id="page-bots">
+        <div class="page-header">
+          <div><h2>Bots</h2><p>Gerencie todos os seus bots</p></div>
+          <button class="btn btn-primary" onclick="abrirModalBot()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Bot
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bot</th>
+                <th>Grupo ID</th>
+                <th>Funil</th>
+                <th>Intervalo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="bots-lista"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FUNIS -->
+      <div class="page" id="page-funis">
+        <div class="page-header">
+          <div><h2>Funis</h2><p>Configure os fluxos de conversa</p></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-secondary" onclick="abrirImportarJSON()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Importar JSON
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalFunil()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Funil
+            </button>
+          </div>
+        </div>
+        <div id="funis-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL BOT -->
+<div class="modal-overlay" id="modal-bot">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-bot-titulo">Novo Bot</h3>
+      <button class="modal-close" onclick="fecharModal('modal-bot')">&times;</button>
+    </div>
+    <input type="hidden" id="bot-id" />
+    <div class="form-group">
+      <label>Foto do Bot (opcional)</label>
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="bot-foto" accept="image/*" onchange="previewFoto(this)" />
+        <img id="foto-preview" class="upload-preview" style="display:none" />
+        <p id="upload-text">Clique para enviar uma foto</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Nome do Bot *</label>
+        <input type="text" id="bot-nome" placeholder="Ex: Ana" />
+      </div>
+      <div class="form-group">
+        <label>Funil de Conversa</label>
+        <select id="bot-funil">
+          <option value="">Sem funil</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Token do Bot (BotFather) *</label>
+      <input type="text" id="bot-token" placeholder="123456789:ABCdef..." />
+    </div>
+    <div class="form-group">
+      <label>ID do Grupo *</label>
+      <input type="text" id="bot-grupo" placeholder="-1001234567890" />
+    </div>
+    <div class="form-group">
+      <label>Mensagem de Apresentação</label>
+      <textarea id="bot-apresentacao" placeholder="Olá! Sou Ana, estou aqui pra ajudar. Me chame no privado!"></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Intervalo Mínimo (minutos)</label>
+        <input type="number" id="bot-min" value="30" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Intervalo Máximo (minutos)</label>
+        <input type="number" id="bot-max" value="90" min="1" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal('modal-bot')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarBot()">Salvar Bot</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FUNIL -->
+<div class="modal-overlay" id="modal-funil" style="align-items:flex-start;padding:24px;overflow-y:auto">
+  <div class="modal" style="max-width:680px;margin:auto">
+    <div class="modal-header">
+      <h3 id="modal-funil-titulo">Novo Funil</h3>
+      <button class="modal-close" onclick="fecharModal('modal-funil')">&times;</button>
+    </div>
+    <input type="hidden" id="funil-id" />
+    <div class="form-group">
+      <label>Nome do Funil *</label>
+      <input type="text" id="funil-nome" placeholder="Ex: Funil de Vendas Principal" />
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="funil-descricao" placeholder="Breve descrição..." />
+    </div>
+    <hr />
+    <div class="section-title">Passos do Funil</div>
+    <div class="passos-list" id="passos-lista"></div>
+    <button class="btn btn-secondary" style="width:100%" onclick="adicionarPasso()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Adicionar Passo
+    </button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal('modal-funil')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFunil()">Salvar Funil</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR JSON -->
+<div class="modal-overlay" id="modal-importar">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Importar Funil via JSON</h3>
+      <button class="modal-close" onclick="fecharModal('modal-importar')">&times;</button>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+      Cole o JSON do funil abaixo. Use o arquivo <code>funis-exemplo/funil-basico.json</code> como referência.
+    </p>
+    <div class="import-area">
+      <textarea id="import-json" placeholder='{"nome":"Meu Funil","passos":[...]}'></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal('modal-importar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="importarJSON()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ========== ESTADO ==========
+let botsData = [];
+let funisData = [];
+let passosEditor = [];
+
+// ========== API ==========
+async function api(method, url, body, isFormData) {
+  const opts = { method, headers: {} };
+  if (body) {
+    if (isFormData) {
+      opts.body = body;
+    } else {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+  }
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// ========== AUTH ==========
+async function fazerLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  if (!user || !senha) { mostrarErro('Preencha usuário e senha'); return; }
+  const res = await api('POST', '/api/login', { user, senha });
+  if (res.ok) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    iniciarApp();
+  } else {
+    erro.textContent = res.erro || 'Erro ao fazer login';
+    erro.style.display = 'block';
+  }
+}
+
+async function fazerLogout() {
+  await api('POST', '/api/logout');
+  location.reload();
+}
+
+async function verificarAuth() {
+  const res = await api('GET', '/api/me');
+  if (res.logado) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    iniciarApp();
+  }
+}
+
+// ========== NAV ==========
+function navTo(pagina) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pagina).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(pagina)) n.classList.add('active');
+  });
+  if (pagina === 'dashboard') carregarDashboard();
+  if (pagina === 'bots') carregarBots();
+  if (pagina === 'funis') carregarFunis();
+}
+
+async function iniciarApp() {
+  await Promise.all([carregarBots(), carregarFunis()]);
+  carregarDashboard();
+}
+
+// ========== DASHBOARD ==========
+async function carregarDashboard() {
+  const [bots, status, funis] = await Promise.all([
+    api('GET', '/api/bots'),
+    api('GET', '/api/status'),
+    api('GET', '/api/funis'),
+  ]);
+
+  const online = bots.filter(b => status[b.id]).length;
+  document.getElementById('stat-total').textContent = bots.length;
+  document.getElementById('stat-online').textContent = online;
+  document.getElementById('stat-offline').textContent = bots.length - online;
+  document.getElementById('stat-funis').textContent = funis.length;
+
+  const tbody = document.getElementById('dashboard-lista');
+  if (!bots.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>Nenhum bot cadastrado ainda</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = bots.map(b => {
+    const online = !!status[b.id];
+    const ultimaMsg = b.ultimaMsg ? new Date(b.ultimaMsg).toLocaleString('pt-BR') : '—';
+    return `<tr>
+      <td><div class="bot-info">
+        ${b.fotoPerfil
+          ? `<img src="/uploads/${b.fotoPerfil}" class="avatar" />`
+          : `<div class="avatar-placeholder">${b.nome[0].toUpperCase()}</div>`}
+        <span>${b.nome}</span>
+      </div></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${b.grupoId}</td>
+      <td>${b.funil ? b.funil.nome : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="color:var(--muted);font-size:13px">${b.intervalMin}–${b.intervalMax} min</td>
+      <td style="font-size:12px;color:var(--muted)">${ultimaMsg}</td>
+      <td><span class="badge ${online ? 'badge-green' : 'badge-red'}"><span class="dot"></span>${online ? 'Online' : 'Offline'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== BOTS ==========
+async function carregarBots() {
+  const [bots, status, funis] = await Promise.all([
+    api('GET', '/api/bots'),
+    api('GET', '/api/status'),
+    api('GET', '/api/funis'),
+  ]);
+  botsData = bots;
+  funisData = funis;
+
+  const tbody = document.getElementById('bots-lista');
+  if (!bots.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <p>Nenhum bot cadastrado. Clique em "Novo Bot" para começar.</p>
+    </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = bots.map(b => {
+    const isOnline = !!status[b.id];
+    return `<tr>
+      <td><div class="bot-info">
+        ${b.fotoPerfil
+          ? `<img src="/uploads/${b.fotoPerfil}" class="avatar" />`
+          : `<div class="avatar-placeholder">${b.nome[0].toUpperCase()}</div>`}
+        <span>${b.nome}</span>
+      </div></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--muted)">${b.grupoId}</td>
+      <td>${b.funil ? b.funil.nome : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="color:var(--muted);font-size:13px">${b.intervalMin}–${b.intervalMax} min</td>
+      <td><span class="badge ${isOnline ? 'badge-green' : 'badge-red'}"><span class="dot"></span>${isOnline ? 'Online' : 'Offline'}</span></td>
+      <td><div class="td-actions">
+        <button class="btn btn-sm ${isOnline ? 'btn-danger' : 'btn-green'}" onclick="toggleBot(${b.id})">${isOnline ? 'Desligar' : 'Ligar'}</button>
+        <button class="btn btn-sm btn-secondary" onclick="editarBot(${b.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="deletarBot(${b.id})">Excluir</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModalBot(bot) {
+  document.getElementById('bot-id').value = '';
+  document.getElementById('bot-nome').value = '';
+  document.getElementById('bot-token').value = '';
+  document.getElementById('bot-grupo').value = '';
+  document.getElementById('bot-apresentacao').value = '';
+  document.getElementById('bot-min').value = 30;
+  document.getElementById('bot-max').value = 90;
+  document.getElementById('bot-foto').value = '';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('upload-text').style.display = 'block';
+  document.getElementById('modal-bot-titulo').textContent = 'Novo Bot';
+
+  // Popular select de funis
+  const sel = document.getElementById('bot-funil');
+  sel.innerHTML = '<option value="">Sem funil</option>' +
+    funisData.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+
+  if (bot) {
+    document.getElementById('modal-bot-titulo').textContent = 'Editar Bot';
+    document.getElementById('bot-id').value = bot.id;
+    document.getElementById('bot-nome').value = bot.nome;
+    document.getElementById('bot-token').value = bot.token;
+    document.getElementById('bot-grupo').value = bot.grupoId;
+    document.getElementById('bot-apresentacao').value = bot.apresentacao || '';
+    document.getElementById('bot-min').value = bot.intervalMin;
+    document.getElementById('bot-max').value = bot.intervalMax;
+    if (bot.funilId) sel.value = bot.funilId;
+    if (bot.fotoPerfil) {
+      document.getElementById('foto-preview').src = '/uploads/' + bot.fotoPerfil;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('upload-text').style.display = 'none';
+    }
+  }
+
+  abrirModal('modal-bot');
+}
+
+function editarBot(id) {
+  const bot = botsData.find(b => b.id === id);
+  if (bot) abrirModalBot(bot);
+}
+
+async function salvarBot() {
+  const id = document.getElementById('bot-id').value;
+  const nome = document.getElementById('bot-nome').value.trim();
+  const token = document.getElementById('bot-token').value.trim();
+  const grupoId = document.getElementById('bot-grupo').value.trim();
+  const apresentacao = document.getElementById('bot-apresentacao').value.trim();
+  const intervalMin = document.getElementById('bot-min').value;
+  const intervalMax = document.getElementById('bot-max').value;
+  const funilId = document.getElementById('bot-funil').value;
+  const fotoFile = document.getElementById('bot-foto').files[0];
+
+  if (!nome || !token || !grupoId) { toast('Preencha nome, token e grupo ID', 'error'); return; }
+
+  const form = new FormData();
+  form.append('nome', nome);
+  form.append('token', token);
+  form.append('grupoId', grupoId);
+  form.append('apresentacao', apresentacao);
+  form.append('intervalMin', intervalMin);
+  form.append('intervalMax', intervalMax);
+  form.append('funilId', funilId);
+  form.append('ativo', 'true');
+  if (fotoFile) form.append('foto', fotoFile);
+
+  let res;
+  if (id) {
+    res = await fetch(`/api/bots/${id}`, { method: 'PUT', body: form });
+  } else {
+    res = await fetch('/api/bots', { method: 'POST', body: form });
+  }
+  const data = await res.json();
+
+  if (data.erro) { toast(data.erro, 'error'); return; }
+
+  toast(id ? 'Bot atualizado!' : 'Bot criado!', 'success');
+  fecharModal('modal-bot');
+  carregarBots();
+  carregarDashboard();
+}
+
+async function toggleBot(id) {
+  const res = await api('POST', `/api/bots/${id}/toggle`);
+  toast(res.ativo ? 'Bot ligado!' : 'Bot desligado!', 'success');
+  carregarBots();
+  carregarDashboard();
+}
+
+async function deletarBot(id) {
+  if (!confirm('Deseja excluir este bot? Esta ação não pode ser desfeita.')) return;
+  await api('DELETE', `/api/bots/${id}`);
+  toast('Bot excluído', 'success');
+  carregarBots();
+  carregarDashboard();
+}
+
+function previewFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('foto-preview').src = e.target.result;
+    document.getElementById('foto-preview').style.display = 'block';
+    document.getElementById('upload-text').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ========== FUNIS ==========
+async function carregarFunis() {
+  funisData = await api('GET', '/api/funis');
+  const grid = document.getElementById('funis-grid');
+
+  if (!funisData.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <p>Nenhum funil criado. Clique em "Novo Funil" para começar.</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = funisData.map(f => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">${f.nome}</div>
+          <div style="font-size:12px;color:var(--muted)">${f.descricao || 'Sem descrição'}</div>
+        </div>
+        <span class="badge badge-yellow">${f.passos.length} passo${f.passos.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div style="margin-bottom:16px">
+        ${f.passos.slice(0, 3).map((p, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted)">
+            <span style="background:var(--surface2);border-radius:4px;padding:2px 6px;font-weight:600">${i + 1}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.mensagem}</span>
+            <span class="badge ${p.tipo === 'botoes' ? 'badge-yellow' : 'badge-green'}">${p.tipo}</span>
+          </div>
+        `).join('')}
+        ${f.passos.length > 3 ? `<div style="font-size:12px;color:var(--muted);padding-top:6px">+${f.passos.length - 3} passos a mais</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-secondary" style="flex:1" onclick="editarFunil(${f.id})">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="deletarFunil(${f.id})">Excluir</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirModalFunil(funil) {
+  passosEditor = [];
+  document.getElementById('funil-id').value = '';
+  document.getElementById('funil-nome').value = '';
+  document.getElementById('funil-descricao').value = '';
+  document.getElementById('modal-funil-titulo').textContent = 'Novo Funil';
+
+  if (funil) {
+    document.getElementById('modal-funil-titulo').textContent = 'Editar Funil';
+    document.getElementById('funil-id').value = funil.id;
+    document.getElementById('funil-nome').value = funil.nome;
+    document.getElementById('funil-descricao').value = funil.descricao || '';
+    passosEditor = funil.passos.map(p => ({
+      mensagem: p.mensagem,
+      tipo: p.tipo,
+      botoes: p.botoes || [],
+    }));
+  }
+
+  renderPassos();
+  abrirModal('modal-funil');
+}
+
+function editarFunil(id) {
+  const funil = funisData.find(f => f.id === id);
+  if (funil) abrirModalFunil(funil);
+}
+
+function adicionarPasso() {
+  passosEditor.push({ mensagem: '', tipo: 'texto', botoes: [] });
+  renderPassos();
+}
+
+function removerPasso(i) {
+  passosEditor.splice(i, 1);
+  renderPassos();
+}
+
+function atualizarPasso(i, campo, valor) {
+  passosEditor[i][campo] = valor;
+  if (campo === 'tipo' && valor === 'botoes' && !passosEditor[i].botoes.length) {
+    passosEditor[i].botoes = [{ texto: '', proximoPasso: 0 }];
+    renderPassos();
+  }
+}
+
+function adicionarBotao(passoIdx) {
+  passosEditor[passoIdx].botoes.push({ texto: '', proximoPasso: 0 });
+  renderPassos();
+}
+
+function removerBotao(passoIdx, btnIdx) {
+  passosEditor[passoIdx].botoes.splice(btnIdx, 1);
+  renderPassos();
+}
+
+function atualizarBotao(passoIdx, btnIdx, campo, valor) {
+  passosEditor[passoIdx].botoes[btnIdx][campo] = campo === 'proximoPasso' ? parseInt(valor) : valor;
+}
+
+function renderPassos() {
+  const lista = document.getElementById('passos-lista');
+  if (!passosEditor.length) {
+    lista.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Nenhum passo ainda. Clique em "Adicionar Passo".</div>`;
+    return;
+  }
+
+  lista.innerHTML = passosEditor.map((p, i) => `
+    <div class="passo-card">
+      <div class="passo-header">
+        <span class="passo-numero">PASSO ${i + 1}</span>
+        <button class="btn btn-sm btn-danger" onclick="removerPasso(${i})">Remover</button>
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label style="font-size:12px">Mensagem</label>
+        <textarea style="min-height:60px" onchange="atualizarPasso(${i},'mensagem',this.value)">${p.mensagem}</textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:${p.tipo === 'botoes' ? '10px' : '0'}">
+        <label style="font-size:12px">Tipo</label>
+        <select onchange="atualizarPasso(${i},'tipo',this.value)">
+          <option value="texto" ${p.tipo === 'texto' ? 'selected' : ''}>Texto simples</option>
+          <option value="botoes" ${p.tipo === 'botoes' ? 'selected' : ''}>Com botoes</option>
+        </select>
+      </div>
+      ${p.tipo === 'botoes' ? `
+        <div class="botoes-list">
+          <label style="font-size:12px;color:var(--muted)">Botoes (texto → vai para o passo)</label>
+          ${p.botoes.map((b, bi) => `
+            <div class="botao-item">
+              <input value="${b.texto}" placeholder="Texto do botao" onchange="atualizarBotao(${i},${bi},'texto',this.value)" />
+              <span>Passo</span>
+              <select onchange="atualizarBotao(${i},${bi},'proximoPasso',this.value)">
+                ${passosEditor.map((_, pi) => pi !== i ? `<option value="${pi}" ${b.proximoPasso === pi ? 'selected' : ''}>${pi + 1}</option>` : '').join('')}
+              </select>
+              <button class="btn btn-sm btn-danger" onclick="removerBotao(${i},${bi})" style="padding:4px 8px">X</button>
+            </div>
+          `).join('')}
+          <button class="btn btn-sm btn-secondary" onclick="adicionarBotao(${i})">+ Botao</button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function salvarFunil() {
+  const id = document.getElementById('funil-id').value;
+  const nome = document.getElementById('funil-nome').value.trim();
+  const descricao = document.getElementById('funil-descricao').value.trim();
+
+  if (!nome) { toast('Informe o nome do funil', 'error'); return; }
+  if (!passosEditor.length) { toast('Adicione pelo menos um passo', 'error'); return; }
+
+  // Sincroniza valores dos textareas antes de salvar
+  document.querySelectorAll('#passos-lista textarea').forEach((el, i) => {
+    if (passosEditor[i]) passosEditor[i].mensagem = el.value;
+  });
+
+  const body = { nome, descricao, passos: passosEditor };
+  let res;
+  if (id) {
+    res = await api('PUT', `/api/funis/${id}`, body);
+  } else {
+    res = await api('POST', '/api/funis', body);
+  }
+
+  if (res.erro) { toast(res.erro, 'error'); return; }
+
+  toast(id ? 'Funil atualizado!' : 'Funil criado!', 'success');
+  fecharModal('modal-funil');
+  carregarFunis();
+}
+
+async function deletarFunil(id) {
+  if (!confirm('Deseja excluir este funil? Os bots vinculados ficaram sem funil.')) return;
+  await api('DELETE', `/api/funis/${id}`);
+  toast('Funil excluído', 'success');
+  carregarFunis();
+}
+
+// ========== IMPORTAR JSON ==========
+function abrirImportarJSON() {
+  document.getElementById('import-json').value = '';
+  abrirModal('modal-importar');
+}
+
+async function importarJSON() {
+  const texto = document.getElementById('import-json').value.trim();
+  if (!texto) { toast('Cole o JSON antes de importar', 'error'); return; }
+
+  let dados;
+  try {
+    dados = JSON.parse(texto);
+  } catch (_) {
+    toast('JSON inválido. Verifique a formatação.', 'error');
+    return;
+  }
+
+  if (!dados.nome || !dados.passos) {
+    toast('JSON deve ter "nome" e "passos"', 'error');
+    return;
+  }
+
+  const res = await api('POST', '/api/funis/importar', dados);
+  if (res.erro) { toast(res.erro, 'error'); return; }
+
+  toast('Funil importado com sucesso!', 'success');
+  fecharModal('modal-importar');
+  carregarFunis();
+}
+
+// ========== UTILITÁRIOS ==========
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg, tipo = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${tipo}`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function mostrarErro(msg) {
+  const el = document.getElementById('login-erro');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// Fechar modal clicando fora
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ========== INIT ==========
+verificarAuth();
+</script>
+</body>
+</html>
