@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/telegram_manager
+      SESSION_SECRET: mude-isso-aqui
+      ADMIN_USER: admin
+      ADMIN_SENHA: admin123
+    depends_on:
+      - postgres
+    volumes:
+      - uploads:/app/public/uploads
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: telegram_manager
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  uploads:
