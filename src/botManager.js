@@ -4,8 +4,25 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const botsAtivos = new Map();
 
+// Horario de Brasilia (UTC-3)
+function agora() {
+  const now = new Date();
+  // Ajusta para UTC-3
+  return new Date(now.getTime() - 3 * 60 * 60 * 1000);
+}
+function agoraHM() {
+  const d = agora();
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+function agoraMs() {
+  const d = agora();
+  return d.getUTCHours() * 3600000 + d.getUTCMinutes() * 60000 + d.getUTCSeconds() * 1000;
+}
+
 function log(nome, msg) {
-  console.log(`[${new Date().toLocaleTimeString("pt-BR")}] [${nome}] ${msg}`);
+  const d = agora();
+  const t = d.getUTCHours().toString().padStart(2,'0')+':'+d.getUTCMinutes().toString().padStart(2,'0')+':'+d.getUTCSeconds().toString().padStart(2,'0');
+  console.log(`[${t}] [${nome}] ${msg}`);
 }
 
 // ============================================================
@@ -29,8 +46,7 @@ function toMin(str) {
 }
 
 function getNivelAtual() {
-  const agora = new Date();
-  const hm = agora.getHours() * 60 + agora.getMinutes();
+  const hm = agoraHM();
   for (const n of NIVEIS) {
     const ini = toMin(n.inicio), fim = toMin(n.fim);
     if (fim > ini) { if (hm >= ini && hm < fim) return n; }
@@ -64,14 +80,16 @@ function horarioParaMs(str) {
   return ((parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0)) * 1000;
 }
 
-// ms até um determinado horário hoje (ou amanhã se já passou)
+// ms ate um horario Brasilia (UTC-3) a partir de agora (UTC)
 function msAteHorario(horarioMs) {
-  const agora = new Date();
-  const inicioHoje = new Date(agora);
-  inicioHoje.setHours(0, 0, 0, 0);
-  let alvo = inicioHoje.getTime() + horarioMs;
-  if (alvo <= agora.getTime()) alvo += 24 * 3600 * 1000;
-  return alvo - agora.getTime();
+  // horarioMs e ms desde meia-noite em Brasilia
+  // Brasilia = UTC - 3h
+  const now = Date.now();
+  const brasiliaAgora = now - 3 * 3600 * 1000;
+  const inicioDiaBrasilia = brasiliaAgora - (brasiliaAgora % (24 * 3600 * 1000));
+  let alvoUTC = inicioDiaBrasilia + horarioMs + 3 * 3600 * 1000; // converte de volta pra UTC
+  if (alvoUTC <= now) alvoUTC += 24 * 3600 * 1000;
+  return alvoUTC - now;
 }
 
 // Retorna ms aleatório dentro de uma janela [inicioMs, fimMs]
@@ -165,9 +183,7 @@ function agendarEventosGlobais(instancias) {
 
   async function scheduleHoje() {
     const globais = await prisma.eventoGlobal.findMany({ where: { ativo: true } });
-    const agora = new Date();
-    const agoraMs = agora.getHours() * 3600000 + agora.getMinutes() * 60000 + agora.getSeconds() * 1000;
-
+    const agoraMsVal = agoraMs();
     const botsF = [...instancias.values()].filter(i => i.sexo === "F" && i.bot);
 
     for (const ev of globais) {
@@ -180,7 +196,7 @@ function agendarEventosGlobais(instancias) {
         const fimMs = horarioParaMs(cfg.janelaFim);
 
         // Só agenda se a janela ainda não terminou hoje
-        if (fimMs <= agoraMs) continue;
+        if (fimMs <= agoraMsVal) continue;
 
         const distribuicao = cfg.pico
           ? distribuirBotsNaJanela(botsF, cfg.janelaInicio, cfg.janelaFim, cfg.pico)
@@ -188,7 +204,7 @@ function agendarEventosGlobais(instancias) {
 
         let agendados = 0;
         for (const { inst, targetMs } of distribuicao) {
-          if (targetMs <= agoraMs) continue; // já passou
+          if (targetMs <= agoraMsVal) continue; // ja passou
           const msAte = targetMs - agoraMs;
           const texto = rand(variacoes);
           const t = setTimeout(async () => {
@@ -206,9 +222,9 @@ function agendarEventosGlobais(instancias) {
         // MODO HORÁRIO FIXO com delay sequencial entre bots
         const [h, m] = ev.horario.split(":").map(Number);
         const alvoMs = h * 3600000 + m * 60000;
-        if (alvoMs <= agoraMs && (agoraMs - alvoMs) > 60000) continue; // já passou há mais de 1 min
+        if (alvoMs <= agoraMsVal && (agoraMsVal - alvoMs) > 60000) continue; // ja passou
 
-        const msBase = alvoMs > agoraMs ? alvoMs - agoraMs : 0;
+        const msBase = alvoMs > agoraMsVal ? alvoMs - agoraMsVal : 0;
         const shuffled = shuffle(botsF);
         let delay = msBase;
 
@@ -231,7 +247,7 @@ function agendarEventosGlobais(instancias) {
     // Reagenda para amanhã à meia-noite
     const amanha = new Date();
     amanha.setDate(amanha.getDate() + 1);
-    amanha.setHours(0, 0, 30, 0);
+    amanha.setUTCHours(3, 0, 30, 0); // meia-noite Brasilia = 03:00 UTC
     const tReset = setTimeout(() => scheduleHoje(), amanha.getTime() - Date.now());
     timers.push(tReset);
   }
@@ -267,14 +283,13 @@ async function agendarRoteiroDia(instancias) {
 
   log("ROTEIRO", `Dia ${diaNum} — ${roteiro.eventos.length} eventos`);
 
-  const agora = new Date();
-  const agoraMs = agora.getHours() * 3600000 + agora.getMinutes() * 60000 + agora.getSeconds() * 1000;
+  const agoraMsRot = agoraMs();
 
   for (const ev of roteiro.eventos) {
     const evMs = horarioParaMs(ev.horario);
-    if (evMs <= agoraMs) continue;
+    if (evMs <= agoraMsRot) continue;
 
-    const msAte = evMs - agoraMs;
+    const msAte = evMs - agoraMsRot;
     const t = setTimeout(async () => {
       const inst = instancias.get(ev.botId);
       if (!inst) return;
@@ -289,7 +304,7 @@ async function agendarRoteiroDia(instancias) {
   // Reagenda roteiro amanhã
   const amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
-  amanha.setHours(0, 1, 0, 0);
+  amanha.setUTCHours(3, 1, 0, 0); // 00:01 Brasilia = 03:01 UTC
   const tAmanha = setTimeout(() => agendarRoteiroDia(instancias), amanha.getTime() - Date.now());
   timers.push(tAmanha);
   return timers;
@@ -299,9 +314,8 @@ async function agendarRoteiroDia(instancias) {
 // CAMADA 3 — MÍDIAS ALEATÓRIAS
 // ============================================================
 function dentroJanela() {
-  const h = new Date().getHours(), m = new Date().getMinutes();
-  const total = h * 60 + m;
-  return total >= 360 || total < 60;
+  const total = agoraHM();
+  return total >= 360 || total < 60; // 06:00 ate 01:00 horario Brasilia
 }
 
 async function getMidiaAleatoria(botId) {
