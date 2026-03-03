@@ -444,4 +444,15 @@ function getStatus() {
 function isBotAtivo(id) { return botsAtivos.has(id); }
 function getBotsAtivos() { return botsAtivos; }
 
-module.exports = { iniciarBot, pararBot, iniciarTodosBots, getStatus, isBotAtivo, getBotsAtivos };
+// Reagenda camadas globais e roteiro com os bots ativos atuais
+// Chamado sempre que um bot e ligado/desligado apos a inicializacao
+async function reagendarCamadas() {
+  // Limpa timers anteriores
+  timersGlobais.forEach(t => clearTimeout(t));
+  timersRoteiro.forEach(t => clearTimeout(t));
+  timersGlobais = agendarEventosGlobais(botsAtivos);
+  timersRoteiro = await agendarRoteiroDia(botsAtivos);
+  log("SISTEMA", `Camadas reagendadas — ${botsAtivos.size} bots ativos`);
+}
+
+module.exports = { iniciarBot, pararBot, iniciarTodosBots, getStatus, isBotAtivo, getBotsAtivos, reagendarCamadas };
