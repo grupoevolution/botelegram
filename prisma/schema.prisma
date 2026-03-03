@@ -12,6 +12,7 @@ model Bot {
   nome         String
   idade        Int        @default(24)
   cidade       String     @default("Sao Paulo")
+  sexo         String     @default("F")
   token        String     @unique
   grupoId      String
   ativo        Boolean    @default(true)
@@ -21,6 +22,7 @@ model Bot {
   funil        Funil?     @relation(fields: [funilId], references: [id])
   midias       Midia[]
   conversas    Conversa[]
+  eventosRoteiro EventoRoteiro[]
 }
 
 model Midia {
@@ -65,6 +67,47 @@ model Conversa {
   atualizadoEm DateTime @default(now())
 
   @@unique([botId, telegramId])
+}
+
+// ROTEIROS — ciclo de N dias
+model RoteiroDia {
+  id        Int             @id @default(autoincrement())
+  dia       Int             @unique  // 1, 2, 3 ... 15
+  ativo     Boolean         @default(true)
+  eventos   EventoRoteiro[]
+  criadoEm  DateTime        @default(now())
+}
+
+model EventoRoteiro {
+  id          Int        @id @default(autoincrement())
+  roteiroDiaId Int
+  roteiroDia  RoteiroDia @relation(fields: [roteiroDiaId], references: [id], onDelete: Cascade)
+  botId       Int
+  bot         Bot        @relation(fields: [botId], references: [id], onDelete: Cascade)
+  horario     String     // "HH:MM:SS"
+  texto       String?
+  mediaUrl    String?
+  mediaTipo   String?
+  ordem       Int        @default(0)
+  criadoEm    DateTime   @default(now())
+}
+
+// EVENTOS GLOBAIS DIARIOS — bom dia, boa tarde, boa noite, etc.
+model EventoGlobal {
+  id        Int      @id @default(autoincrement())
+  nome      String   // "bom_dia", "boa_tarde", "boa_noite", "almoco", etc.
+  horario   String   // "HH:MM"
+  ativo     Boolean  @default(true)
+  variacoes String   // JSON array de textos alternativos
+  criadoEm  DateTime @default(now())
+}
+
+// CONFIG do sistema
+model Config {
+  id         Int      @id @default(autoincrement())
+  chave      String   @unique
+  valor      String
+  criadoEm   DateTime @default(now())
 }
 
 model Admin {
