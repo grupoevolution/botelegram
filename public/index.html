@@ -5,141 +5,132 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bot Manager</title>
   <style>
-    :root {
-      --bg:#0d0f18;--surface:#161925;--surface2:#1e2235;--border:#2a2f45;
-      --primary:#6366f1;--pd:#4f52d4;--green:#22c55e;--red:#ef4444;
-      --yellow:#f59e0b;--purple:#a855f7;--text:#e2e8f0;--muted:#64748b;--r:10px;
-    }
+    :root{--bg:#0d0f18;--s:#161925;--s2:#1e2235;--b:#2a2f45;--p:#6366f1;--pd:#4f52d4;--g:#22c55e;--r:#ef4444;--y:#f59e0b;--pu:#a855f7;--t:#e2e8f0;--m:#64748b;--ra:10px;}
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-    /* LOGIN */
+    body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;}
     #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
-    .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:100%;max-width:400px;}
-    .login-box h1{font-size:22px;margin-bottom:6px;}
-    .login-box .sub{color:var(--muted);margin-bottom:28px;font-size:14px;}
-    /* LAYOUT */
+    .lbox{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:48px 40px;width:100%;max-width:400px;}
+    .lbox h1{font-size:22px;margin-bottom:6px;}.lbox .sub{color:var(--m);margin-bottom:28px;font-size:14px;}
     #app{display:none;}
     .layout{display:flex;min-height:100vh;}
-    /* SIDEBAR */
-    .sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;top:0;left:0;height:100vh;z-index:10;}
-    .logo{padding:0 20px 20px;font-size:15px;font-weight:700;border-bottom:1px solid var(--border);margin-bottom:12px;display:flex;align-items:center;gap:10px;color:var(--primary);}
-    .ns{padding:8px 20px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
-    .ni{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:14px;color:var(--muted);border-left:3px solid transparent;transition:all .15s;}
-    .ni:hover{background:var(--surface2);color:var(--text);}
-    .ni.active{color:var(--primary);background:rgba(99,102,241,.08);border-left-color:var(--primary);}
-    .sb-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);}
-    .btn-sair{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r);padding:8px;cursor:pointer;font-size:13px;transition:all .15s;}
-    .btn-sair:hover{border-color:var(--red);color:var(--red);}
-    /* MAIN */
+    .sidebar{width:230px;background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column;padding:20px 0;position:fixed;top:0;left:0;height:100vh;z-index:10;overflow-y:auto;}
+    .logo{padding:0 20px 20px;font-size:15px;font-weight:700;border-bottom:1px solid var(--b);margin-bottom:12px;display:flex;align-items:center;gap:10px;color:var(--p);}
+    .ns{padding:8px 20px 4px;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;}
+    .ni{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:14px;color:var(--m);border-left:3px solid transparent;transition:all .15s;}
+    .ni:hover{background:var(--s2);color:var(--t);}.ni.active{color:var(--p);background:rgba(99,102,241,.08);border-left-color:var(--p);}
+    .sb-bot{margin-top:auto;padding:16px 20px;border-top:1px solid var(--b);}
+    .btn-sair{width:100%;background:transparent;border:1px solid var(--b);color:var(--m);border-radius:var(--ra);padding:8px;cursor:pointer;font-size:13px;transition:all .15s;}
+    .btn-sair:hover{border-color:var(--r);color:var(--r);}
     .main{flex:1;margin-left:230px;overflow-y:auto;}
-    .page{display:none;padding:28px 32px;max-width:1200px;}
-    .page.active{display:block;}
-    /* PAGE HEADER */
+    .page{display:none;padding:28px 32px;max-width:1300px;}.page.active{display:block;}
     .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-    .ph h2{font-size:20px;font-weight:600;}
-    .ph p{color:var(--muted);font-size:13px;margin-top:3px;}
-    /* FORM */
+    .ph h2{font-size:20px;font-weight:600;}.ph p{color:var(--m);font-size:13px;margin-top:3px;}
     .fg{margin-bottom:14px;}
-    .fg label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
-    .fg input,.fg select,.fg textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px;color:var(--text);font-size:14px;outline:none;transition:border .2s;}
-    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--primary);}
-    .fg textarea{resize:vertical;min-height:72px;}
-    .fg select option{background:var(--surface2);}
-    .fg small{font-size:11px;color:var(--muted);display:block;margin-top:4px;}
+    .fg label{display:block;font-size:12px;color:var(--m);margin-bottom:5px;}
+    .fg input,.fg select,.fg textarea{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:var(--ra);padding:9px 12px;color:var(--t);font-size:14px;outline:none;transition:border .2s;}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--p);}
+    .fg textarea{resize:vertical;min-height:72px;}.fg select option{background:var(--s2);}
+    .fg small{font-size:11px;color:var(--m);display:block;margin-top:4px;}
     .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
     .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
-    /* BUTTONS */
-    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-size:13px;cursor:pointer;border:none;transition:all .15s;font-weight:500;}
-    .bp{background:var(--primary);color:#fff;}.bp:hover{background:var(--pd);}
-    .bs{background:var(--surface2);color:var(--text);border:1px solid var(--border);}.bs:hover{border-color:var(--primary);color:var(--primary);}
-    .bd{background:transparent;color:var(--red);border:1px solid var(--border);}.bd:hover{background:rgba(239,68,68,.1);border-color:var(--red);}
-    .bg{background:var(--green);color:#fff;}.bg:hover{opacity:.9;}
+    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--ra);font-size:13px;cursor:pointer;border:none;transition:all .15s;font-weight:500;}
+    .bp{background:var(--p);color:#fff;}.bp:hover{background:var(--pd);}
+    .bs{background:var(--s2);color:var(--t);border:1px solid var(--b);}.bs:hover{border-color:var(--p);color:var(--p);}
+    .bd{background:transparent;color:var(--r);border:1px solid var(--b);}.bd:hover{background:rgba(239,68,68,.1);border-color:var(--r);}
+    .bgreen{background:var(--g);color:#fff;}.bgreen:hover{opacity:.9;}
     .bsm{padding:5px 10px;font-size:12px;}
-    /* STATS */
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
-    .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
-    .sc .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px;}
+    .sc{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px 20px;}
+    .sc .lbl{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
     .sc .val{font-size:26px;font-weight:700;}
-    .sc.blue .val{color:var(--primary);}.sc.green .val{color:var(--green);}.sc.red .val{color:var(--red);}.sc.purple .val{color:var(--purple);}
-    /* TABLE */
-    .tw{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+    .sc.blue .val{color:var(--p);}.sc.green .val{color:var(--g);}.sc.red .val{color:var(--r);}.sc.purple .val{color:var(--pu);}.sc.yellow .val{color:var(--y);}
+    .tw{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);overflow:hidden;}
     table{width:100%;border-collapse:collapse;}
-    thead{background:var(--surface2);}
-    th{padding:11px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500;}
-    td{padding:13px 14px;font-size:13px;border-top:1px solid var(--border);vertical-align:middle;}
+    thead{background:var(--s2);}
+    th{padding:11px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;}
+    td{padding:12px 14px;font-size:13px;border-top:1px solid var(--b);vertical-align:middle;}
     tr:hover td{background:rgba(255,255,255,.015);}
-    /* BADGE */
     .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;}
-    .bg-green{background:rgba(34,197,94,.12);color:var(--green);}
-    .bg-red{background:rgba(239,68,68,.12);color:var(--red);}
-    .bg-yellow{background:rgba(245,158,11,.12);color:var(--yellow);}
-    .bg-purple{background:rgba(168,85,247,.12);color:var(--purple);}
-    .bg-blue{background:rgba(99,102,241,.12);color:var(--primary);}
+    .bgg{background:rgba(34,197,94,.12);color:var(--g);}.bgr{background:rgba(239,68,68,.12);color:var(--r);}
+    .bgy{background:rgba(245,158,11,.12);color:var(--y);}.bgpu{background:rgba(168,85,247,.12);color:var(--pu);}
+    .bgb{background:rgba(99,102,241,.12);color:var(--p);}
     .dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
-    .actions{display:flex;gap:5px;flex-wrap:wrap;}
-    /* MODAL */
+    .acts{display:flex;gap:5px;flex-wrap:wrap;}
     .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;padding:20px;}
     .mo.open{display:flex;}
-    .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:24px;}
-    .modal-lg{max-width:720px;}
+    .modal{background:var(--s);border:1px solid var(--b);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:24px;}
+    .mlg{max-width:800px;}.mxlg{max-width:960px;}
     .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
     .mh h3{font-size:16px;font-weight:600;}
-    .mc{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;padding:0;}
-    .mc:hover{color:var(--text);}
-    .mf{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
-    /* PASSOS */
+    .mc{background:none;border:none;color:var(--m);cursor:pointer;font-size:22px;line-height:1;padding:0;}.mc:hover{color:var(--t);}
+    .mf{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--b);}
     .pl{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
-    .pc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+    .pc{background:var(--s2);border:1px solid var(--b);border-radius:var(--ra);padding:14px;}
     .pc-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-    .pn{font-size:11px;color:var(--primary);font-weight:700;background:rgba(99,102,241,.1);padding:2px 8px;border-radius:99px;}
-    /* MIDIAS */
-    .mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
-    .mc2{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;}
+    .pn{font-size:11px;color:var(--p);font-weight:700;background:rgba(99,102,241,.1);padding:2px 8px;border-radius:99px;}
+    .mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+    .mc2{background:var(--s2);border:1px solid var(--b);border-radius:var(--ra);padding:14px;display:flex;flex-direction:column;gap:8px;}
     .mc2-top{display:flex;align-items:center;justify-content:space-between;}
-    .mimg{width:100%;height:110px;object-fit:cover;border-radius:8px;}
-    /* TABS */
-    .tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
-    .tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--muted);border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
-    .tab:hover{color:var(--text);}
-    .tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+    .mimg{width:100%;height:100px;object-fit:cover;border-radius:8px;}
+    .tabs{display:flex;margin-bottom:20px;border-bottom:1px solid var(--b);}
+    .tab{padding:8px 16px;cursor:pointer;font-size:13px;color:var(--m);border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+    .tab:hover{color:var(--t);}.tab.active{color:var(--p);border-bottom-color:var(--p);}
     .tc{display:none;}.tc.active{display:block;}
-    /* AVATAR */
-    .av{width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+    .av{width:32px;height:32px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+    .av.m{background:var(--m);}
     .nc{display:flex;align-items:center;gap:10px;}
-    /* MISC */
-    .empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;}
-    hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
-    .sl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+    .empty{text-align:center;padding:48px 20px;color:var(--m);font-size:13px;}
+    hr{border:none;border-top:1px solid var(--b);margin:14px 0;}
+    .sl{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
     code{font-family:monospace;background:var(--bg);padding:1px 6px;border-radius:4px;font-size:12px;}
-    #toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;}
-    #toast.show{opacity:1;}#toast.ok{border-color:var(--green);color:var(--green);}#toast.err{border-color:var(--red);color:var(--red);}
-    /* FUNIL CARDS */
-    .fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;}
-    .fc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
-    .fc-nome{font-weight:600;margin-bottom:3px;}
-    .fc-desc{font-size:12px;color:var(--muted);}
-    .passo-row{padding:5px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;}
-    .passo-idx{background:var(--surface2);padding:1px 6px;border-radius:4px;font-weight:600;font-size:11px;}
+    #toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--s2);border:1px solid var(--b);border-radius:var(--ra);padding:10px 18px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;}
+    #toast.show{opacity:1;}#toast.ok{border-color:var(--g);color:var(--g);}#toast.err{border-color:var(--r);color:var(--r);}
+    .fc{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px;}
+    .nivel-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+    .nivel-baixo{background:rgba(100,116,139,.15);color:var(--m);}
+    .nivel-medio{background:rgba(245,158,11,.12);color:var(--y);}
+    .nivel-alto{background:rgba(99,102,241,.12);color:var(--p);}
+    .nivel-frenetico{background:rgba(239,68,68,.12);color:var(--r);}
+    /* ROTEIRO */
+    .ev-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;}
+    .ev-time{font-family:monospace;font-size:13px;color:var(--p);font-weight:700;min-width:75px;}
+    .ev-bot{font-size:12px;color:var(--m);min-width:90px;}
+    .ev-texto{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .ev-acts{display:flex;gap:4px;flex-shrink:0;}
+    /* CICLO */
+    .ciclo-box{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+    .ciclo-dia{font-size:42px;font-weight:700;color:var(--p);}
+    .dias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+    .dia-card{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:14px;cursor:pointer;transition:all .15s;text-align:center;}
+    .dia-card:hover{border-color:var(--p);}
+    .dia-card.atual{border-color:var(--p);background:rgba(99,102,241,.08);}
+    .dia-num{font-size:22px;font-weight:700;color:var(--p);}
+    .dia-ev{font-size:12px;color:var(--m);}
+    /* GLOBAIS */
+    .gl-card{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:16px;margin-bottom:12px;}
+    .gl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .gl-nome{font-weight:600;font-size:14px;}
+    .gl-hora{font-family:monospace;color:var(--p);font-weight:700;}
+    .var-chip{display:inline-block;background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:3px 10px;font-size:12px;margin:3px;}
+    .info-bar{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:var(--ra);padding:12px 16px;font-size:13px;color:var(--m);margin-bottom:16px;}
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-box">
+  <div class="lbox">
     <h1>Bot Manager</h1>
-    <div class="sub">Painel de gerenciamento de bots</div>
+    <div class="sub">Painel de gerenciamento</div>
     <div class="fg"><label>Usuario</label><input type="text" id="lu" placeholder="admin" /></div>
-    <div class="fg"><label>Senha</label><input type="password" id="ls" placeholder="senha" onkeydown="if(event.key==='Enter')login()" /></div>
+    <div class="fg"><label>Senha</label><input type="password" id="ls" onkeydown="if(event.key==='Enter')login()" /></div>
     <button class="btn bp" style="width:100%;justify-content:center;margin-top:4px" onclick="login()">Entrar</button>
-    <p id="le" style="color:var(--red);font-size:13px;margin-top:10px;display:none"></p>
+    <p id="le" style="color:var(--r);font-size:13px;margin-top:10px;display:none"></p>
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="layout">
-
     <aside class="sidebar">
       <div class="logo">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -148,20 +139,29 @@
       <nav>
         <div class="ns">Geral</div>
         <div class="ni active" data-p="dashboard" onclick="nav('dashboard')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Dashboard
         </div>
-        <div class="ns">Configuracao</div>
+        <div class="ns">Conteudo</div>
         <div class="ni" data-p="bots" onclick="nav('bots')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Bots / Modelos
         </div>
+        <div class="ni" data-p="roteiros" onclick="nav('roteiros')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Roteiros (Ciclo)
+        </div>
+        <div class="ni" data-p="globais" onclick="nav('globais')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+          Globais Diarios
+        </div>
+        <div class="ns">Privado</div>
         <div class="ni" data-p="funis" onclick="nav('funis')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          Funis do Privado
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Funis do PV
         </div>
       </nav>
-      <div class="sb-bottom"><button class="btn-sair" onclick="logout()">Sair</button></div>
+      <div class="sb-bot"><button class="btn-sair" onclick="logout()">Sair</button></div>
     </aside>
 
     <main class="main">
@@ -177,12 +177,21 @@
           <div class="sc green"><div class="lbl">Online</div><div class="val" id="s-online">0</div></div>
           <div class="sc red"><div class="lbl">Offline</div><div class="val" id="s-offline">0</div></div>
           <div class="sc purple"><div class="lbl">Midias</div><div class="val" id="s-midias">0</div></div>
-          <div class="sc"><div class="lbl">Funis</div><div class="val" id="s-funis">0</div></div>
-          <div class="sc"><div class="lbl">Conversas PV</div><div class="val" id="s-conv">0</div></div>
+          <div class="sc yellow"><div class="lbl">Roteiros</div><div class="val" id="s-roteiros">0</div></div>
+          <div class="sc"><div class="lbl">Globais</div><div class="val" id="s-globais">0</div></div>
+          <div class="sc"><div class="lbl">Conv. PV</div><div class="val" id="s-conv">0</div></div>
+        </div>
+        <div class="info-bar" id="ciclo-status">Carregando status do ciclo...</div>
+        <div class="sl">Niveis de atividade ativos</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:24px;">
+          <div class="sc"><div class="lbl">Baixo (01:10-07:30 / 10:00-12:40 / 14:20-17:30)</div><div style="font-size:14px;color:var(--m)">30-50 msgs/hora</div></div>
+          <div class="sc"><div class="lbl">Medio (12:40-14:20 / 00:10-01:10)</div><div style="font-size:14px;color:var(--y)">80-120 msgs/hora</div></div>
+          <div class="sc"><div class="lbl">Alto (07:30-10:00 / 17:30-19:00 / 23:00-00:10)</div><div style="font-size:14px;color:var(--p)">180-250 msgs/hora</div></div>
+          <div class="sc"><div class="lbl">Frenetico (19:00-23:00)</div><div style="font-size:14px;color:var(--r)">400-600 msgs/hora</div></div>
         </div>
         <div class="tw">
           <table>
-            <thead><tr><th>Bot</th><th>Perfil</th><th>Funil</th><th>Midias</th><th>Ultima Postagem</th><th>Status</th></tr></thead>
+            <thead><tr><th>Bot</th><th>Sexo</th><th>Perfil</th><th>Midias</th><th>Ultima Post</th><th>Status</th></tr></thead>
             <tbody id="dash-tb"></tbody>
           </table>
         </div>
@@ -191,27 +200,82 @@
       <!-- BOTS -->
       <div class="page" id="page-bots">
         <div class="ph">
-          <div><h2>Bots / Modelos</h2><p>Gerencie os perfis que postam no grupo</p></div>
+          <div><h2>Bots / Modelos</h2><p>Gerencie os perfis do grupo</p></div>
           <button class="btn bp" onclick="openBot()">+ Novo Bot</button>
         </div>
         <div class="tw">
           <table>
-            <thead><tr><th>Modelo</th><th>Perfil</th><th>Funil PV</th><th>Midias</th><th>Status</th><th>Acoes</th></tr></thead>
+            <thead><tr><th>Modelo</th><th>Sexo</th><th>Perfil</th><th>Funil PV</th><th>Midias</th><th>Status</th><th>Acoes</th></tr></thead>
             <tbody id="bots-tb"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- ROTEIROS -->
+      <div class="page" id="page-roteiros">
+        <div class="ph">
+          <div><h2>Roteiros — Ciclo de Dias</h2><p>Configure conversas roteirizadas por horario</p></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn bs bsm" onclick="openImportarRoteiro()">Importar JSON</button>
+            <button class="btn bp" onclick="openNovoRoteiro()">+ Novo Dia</button>
+          </div>
+        </div>
+        <div class="ciclo-box">
+          <div>
+            <div class="sl">Dia atual do ciclo</div>
+            <div style="display:flex;align-items:baseline;gap:8px;">
+              <div class="ciclo-dia" id="ciclo-dia-num">—</div>
+              <div style="color:var(--m);font-size:14px">de <span id="ciclo-total">0</span> dias</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px;color:var(--m);margin-bottom:8px;">Inicio do ciclo: <span id="ciclo-inicio">—</span></div>
+            <button class="btn bd bsm" onclick="reiniciarCiclo()">Reiniciar ciclo do Dia 1</button>
+          </div>
+        </div>
+        <div class="dias-grid" id="dias-grid"></div>
+      </div>
+
+      <!-- EDITOR DE DIA -->
+      <div class="page" id="page-editor-dia">
+        <div class="ph">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn bs bsm" onclick="nav('roteiros')">Voltar</button>
+            <div><h2 id="editor-titulo">Dia 1</h2><p>Edite os eventos deste dia</p></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn bs bsm" onclick="openAddEvento()">+ Adicionar Evento</button>
+            <button class="btn bp" onclick="salvarRoteiroDia()">Salvar Dia</button>
+          </div>
+        </div>
+        <div class="info-bar">
+          Eventos com horario exato (HH:MM:SS). Bots homens so aparecem quando voce os adiciona manualmente. O sistema executa cada evento no horario configurado.
+        </div>
+        <div id="eventos-editor-lista"></div>
+      </div>
+
+      <!-- GLOBAIS -->
+      <div class="page" id="page-globais">
+        <div class="ph">
+          <div><h2>Eventos Globais Diarios</h2><p>Bom dia, boa tarde, boa noite — todos os bots femininos falam todo dia</p></div>
+          <button class="btn bp" onclick="openGlobal()">+ Novo Evento</button>
+        </div>
+        <div class="info-bar">
+          Cada evento global dispara todos os dias no horario configurado. Todos os bots <strong>femininos</strong> ativos enviam uma variacao aleatoria com delay de 8 a 25 segundos entre cada um.
+        </div>
+        <div id="globais-lista"></div>
+      </div>
+
       <!-- FUNIS -->
       <div class="page" id="page-funis">
         <div class="ph">
-          <div><h2>Funis do Privado</h2><p>Fluxo de conversa quando alguem chama no privado</p></div>
+          <div><h2>Funis do Privado</h2><p>Fluxo de conversa quando alguem chama no PV</p></div>
           <button class="btn bp" onclick="openFunil()">+ Novo Funil</button>
         </div>
         <div id="funis-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
       </div>
 
-      <!-- BOT DETAIL -->
+      <!-- DETALHE BOT (midias) -->
       <div class="page" id="page-detail">
         <div class="ph">
           <div style="display:flex;align-items:center;gap:12px;">
@@ -220,22 +284,11 @@
           </div>
           <button class="btn bp" onclick="openMidia()">+ Adicionar Midia</button>
         </div>
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:20px;">
-          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">
-            As midias abaixo sao usadas pelo bot para postar no grupo automaticamente. Cada categoria e alternada no cronograma.
-          </div>
-          <div style="display:flex;gap:20px;font-size:12px;">
-            <span><strong style="color:var(--primary)">Apresentacao</strong> — se apresenta com foto</span>
-            <span><strong style="color:var(--green)">Rotina</strong> — fotos do dia a dia</span>
-            <span><strong style="color:var(--yellow)">Interacao</strong> — texto ou pergunta pro grupo</span>
-            <span><strong style="color:var(--purple)">Chamada PVT</strong> — convite pro privado</span>
-          </div>
-        </div>
         <div class="tabs">
-          <button class="tab active" onclick="tab('apresentacao')">Apresentacao</button>
-          <button class="tab" onclick="tab('rotina')">Rotina</button>
-          <button class="tab" onclick="tab('interacao')">Interacao</button>
-          <button class="tab" onclick="tab('chamada_pvt')">Chamada PVT</button>
+          <button class="tab active" onclick="tabMidia('apresentacao')">Apresentacao</button>
+          <button class="tab" onclick="tabMidia('rotina')">Rotina</button>
+          <button class="tab" onclick="tabMidia('interacao')">Interacao</button>
+          <button class="tab" onclick="tabMidia('chamada_pvt')">Chamada PVT</button>
         </div>
         <div class="tc active" id="tc-apresentacao"><div class="mg" id="mg-apresentacao"></div></div>
         <div class="tc" id="tc-rotina"><div class="mg" id="mg-rotina"></div></div>
@@ -250,19 +303,21 @@
 <!-- MODAL BOT -->
 <div class="mo" id="mo-bot">
   <div class="modal">
-    <div class="mh"><h3 id="mbot-titulo">Novo Bot</h3><button class="mc" onclick="closeM('mo-bot')">&times;</button></div>
+    <div class="mh"><h3 id="mbot-t">Novo Bot</h3><button class="mc" onclick="closeM('mo-bot')">&times;</button></div>
     <input type="hidden" id="bot-id" />
-    <div class="g2">
-      <div class="fg" style="grid-column:1/-1"><label>Nome do Personagem *</label><input type="text" id="bot-nome" placeholder="Ex: Camila" /></div>
-      <div class="fg"><label>Idade</label><input type="number" id="bot-idade" value="24" min="18" max="45" /></div>
+    <div class="g3">
+      <div class="fg" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="bot-nome" placeholder="Ex: Camila" /></div>
+      <div class="fg"><label>Sexo</label>
+        <select id="bot-sexo"><option value="F">Feminino</option><option value="M">Masculino</option></select></div>
+      <div class="fg"><label>Idade</label><input type="number" id="bot-idade" value="24" min="18" max="55" /></div>
       <div class="fg"><label>Cidade</label><input type="text" id="bot-cidade" placeholder="Sao Paulo" /></div>
     </div>
-    <div class="fg"><label>Token do Bot (BotFather) *</label><input type="text" id="bot-token" placeholder="123456789:ABCdef..." /></div>
-    <div class="fg"><label>ID do Grupo onde vai postar *</label><input type="text" id="bot-grupo" placeholder="-1001234567890" /><small>O bot precisa ser admin do grupo</small></div>
+    <div class="fg"><label>Token (BotFather) *</label><input type="text" id="bot-token" placeholder="123456789:ABCdef..." /></div>
+    <div class="fg"><label>ID do Grupo *</label><input type="text" id="bot-grupo" placeholder="-1001234567890" /></div>
     <div class="fg"><label>Funil do Privado</label><select id="bot-funil"><option value="">Sem funil</option></select></div>
     <div class="mf">
       <button class="btn bs" onclick="closeM('mo-bot')">Cancelar</button>
-      <button class="btn bp" onclick="saveBot()">Salvar Bot</button>
+      <button class="btn bp" onclick="saveBot()">Salvar</button>
     </div>
   </div>
 </div>
@@ -270,62 +325,118 @@
 <!-- MODAL MIDIA -->
 <div class="mo" id="mo-midia">
   <div class="modal">
-    <div class="mh"><h3 id="mmid-titulo">Adicionar Midia</h3><button class="mc" onclick="closeM('mo-midia')">&times;</button></div>
+    <div class="mh"><h3 id="mmid-t">Adicionar Midia</h3><button class="mc" onclick="closeM('mo-midia')">&times;</button></div>
     <input type="hidden" id="mid-id" />
     <div class="g2">
-      <div class="fg">
-        <label>Categoria *</label>
+      <div class="fg"><label>Categoria *</label>
         <select id="mid-cat">
-          <option value="apresentacao">Apresentacao (foto se apresentando)</option>
-          <option value="rotina">Rotina (dia a dia)</option>
-          <option value="interacao">Interacao (texto/pergunta)</option>
-          <option value="chamada_pvt">Chamada PVT (convite privado)</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label>Tipo *</label>
+          <option value="apresentacao">Apresentacao</option>
+          <option value="rotina">Rotina</option>
+          <option value="interacao">Interacao</option>
+          <option value="chamada_pvt">Chamada PVT</option>
+        </select></div>
+      <div class="fg"><label>Tipo *</label>
         <select id="mid-tipo" onchange="toggleUrl()">
-          <option value="foto">Foto</option>
-          <option value="video">Video</option>
-          <option value="audio">Audio</option>
-          <option value="texto">Somente Texto</option>
-        </select>
-      </div>
+          <option value="foto">Foto</option><option value="video">Video</option>
+          <option value="audio">Audio</option><option value="texto">Somente Texto</option>
+        </select></div>
     </div>
-    <div class="fg" id="url-group">
-      <label>URL da Midia *</label>
-      <input type="text" id="mid-url" placeholder="https://link-direto-da-imagem-ou-video" />
-      <small>Cole o link direto do arquivo. Ex: link do Google Drive, Imgur, Dropbox, etc.</small>
-    </div>
-    <div class="fg">
-      <label>Legenda / Texto que aparece no grupo</label>
-      <textarea id="mid-leg" placeholder="Ex: Boa tarde! Sou a {nome}, {idade} anos, de {cidade}. Me chama no privado..."></textarea>
-      <small>Variaveis: <code>{nome}</code> <code>{idade}</code> <code>{cidade}</code></small>
-    </div>
+    <div class="fg" id="url-group"><label>URL da Midia *</label><input type="text" id="mid-url" placeholder="https://..." /></div>
+    <div class="fg"><label>Legenda / Texto</label>
+      <textarea id="mid-leg" placeholder="Use {nome}, {idade}, {cidade}..."></textarea>
+      <small>Variaveis: <code>{nome}</code> <code>{idade}</code> <code>{cidade}</code></small></div>
     <div class="mf">
       <button class="btn bs" onclick="closeM('mo-midia')">Cancelar</button>
-      <button class="btn bp" onclick="saveMidia()">Salvar Midia</button>
+      <button class="btn bp" onclick="saveMidia()">Salvar</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL FUNIL -->
 <div class="mo" id="mo-funil" style="align-items:flex-start;overflow-y:auto;">
-  <div class="modal modal-lg" style="margin:20px auto;">
-    <div class="mh"><h3 id="mfun-titulo">Novo Funil</h3><button class="mc" onclick="closeM('mo-funil')">&times;</button></div>
+  <div class="modal mlg" style="margin:20px auto;">
+    <div class="mh"><h3 id="mfun-t">Novo Funil</h3><button class="mc" onclick="closeM('mo-funil')">&times;</button></div>
     <input type="hidden" id="fun-id" />
     <div class="g2">
-      <div class="fg"><label>Nome *</label><input type="text" id="fun-nome" placeholder="Ex: Funil Principal" /></div>
-      <div class="fg"><label>Descricao</label><input type="text" id="fun-desc" placeholder="Descricao opcional" /></div>
+      <div class="fg"><label>Nome *</label><input type="text" id="fun-nome" /></div>
+      <div class="fg"><label>Descricao</label><input type="text" id="fun-desc" /></div>
     </div>
     <hr />
-    <div class="sl">Passos da Conversa no Privado</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Cada passo e enviado quando o usuario manda qualquer mensagem. Configure texto e/ou midia para cada passo.</p>
+    <div class="sl">Passos</div>
     <div class="pl" id="passos-lista"></div>
     <button class="btn bs" style="width:100%;justify-content:center;" onclick="addPasso()">+ Adicionar Passo</button>
     <div class="mf">
       <button class="btn bs" onclick="closeM('mo-funil')">Cancelar</button>
-      <button class="btn bp" onclick="saveFunil()">Salvar Funil</button>
+      <button class="btn bp" onclick="saveFunil()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GLOBAL -->
+<div class="mo" id="mo-global">
+  <div class="modal mlg">
+    <div class="mh"><h3 id="mgl-t">Novo Evento Global</h3><button class="mc" onclick="closeM('mo-global')">&times;</button></div>
+    <input type="hidden" id="gl-id" />
+    <div class="g2">
+      <div class="fg"><label>Nome interno *</label><input type="text" id="gl-nome" placeholder="Ex: bom_dia" /></div>
+      <div class="fg"><label>Horario (HH:MM) *</label><input type="time" id="gl-hora" /></div>
+    </div>
+    <div class="fg">
+      <label>Variacoes de texto (uma por linha) *</label>
+      <textarea id="gl-vars" style="min-height:140px;" placeholder="bom dia galera&#10;boaaaa&#10;bom diaaaa gente&#10;dia!&#10;acordei kkk"></textarea>
+      <small>Cada bot vai pegar uma variacao aleatoria diferente</small>
+    </div>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-global')">Cancelar</button>
+      <button class="btn bp" onclick="saveGlobal()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVENTO ROTEIRO -->
+<div class="mo" id="mo-evento">
+  <div class="modal">
+    <div class="mh"><h3>Adicionar Evento ao Roteiro</h3><button class="mc" onclick="closeM('mo-evento')">&times;</button></div>
+    <input type="hidden" id="ev-idx" value="-1" />
+    <div class="g2">
+      <div class="fg"><label>Horario (HH:MM:SS) *</label><input type="text" id="ev-hora" placeholder="10:00:00" /></div>
+      <div class="fg"><label>Bot *</label><select id="ev-bot"></select></div>
+    </div>
+    <div class="fg"><label>Texto da Mensagem</label>
+      <textarea id="ev-texto" placeholder="Ex: bom dia galera! {nome} aqui..."></textarea></div>
+    <div class="g2">
+      <div class="fg"><label>URL de Midia (opcional)</label><input type="text" id="ev-media" placeholder="https://..." /></div>
+      <div class="fg"><label>Tipo da Midia</label>
+        <select id="ev-tipo"><option value="foto">Foto</option><option value="video">Video</option><option value="audio">Audio</option></select></div>
+    </div>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-evento')">Cancelar</button>
+      <button class="btn bp" onclick="addEvento()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="mo" id="mo-importar">
+  <div class="modal mlg">
+    <div class="mh"><h3>Importar Roteiro (JSON)</h3><button class="mc" onclick="closeM('mo-importar')">&times;</button></div>
+    <div class="info-bar" style="margin-bottom:14px;">
+      Cole um JSON no formato abaixo. O campo <code>botId</code> deve ser o ID do bot no sistema.
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:var(--m);margin-bottom:14px;line-height:1.6;">
+      {<br>
+      &nbsp;&nbsp;"dia": 1,<br>
+      &nbsp;&nbsp;"eventos": [<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;{"botId": 1, "horario": "10:00:00", "texto": "bom dia galera"},<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;{"botId": 3, "horario": "10:00:45", "texto": "oi gente!"},<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;{"botId": 2, "horario": "10:01:10", "mediaUrl": "https://...", "mediaTipo": "foto", "texto": "legenda aqui"}<br>
+      &nbsp;&nbsp;]<br>
+      }
+    </div>
+    <div class="fg"><label>JSON do Roteiro</label><textarea id="importar-json" style="min-height:180px;font-family:monospace;font-size:12px;" placeholder='{"dia":1,"eventos":[...]}'></textarea></div>
+    <div class="mf">
+      <button class="btn bs" onclick="closeM('mo-importar')">Cancelar</button>
+      <button class="btn bp" onclick="importarRoteiro()">Importar</button>
     </div>
   </div>
 </div>
@@ -333,9 +444,8 @@
 <div id="toast"></div>
 
 <script>
-let bots=[], funis=[], passos=[], detBot=null, catAtiva='apresentacao';
+let bots=[], funis=[], globais=[], eventosEditor=[], diaSendoEditado=null, detBot=null, catAtiva='apresentacao';
 
-// API
 async function req(m,u,b){
   const o={method:m,headers:{'Content-Type':'application/json'}};
   if(b)o.body=JSON.stringify(b);
@@ -344,27 +454,19 @@ async function req(m,u,b){
 
 // AUTH
 async function login(){
-  const u=document.getElementById('lu').value.trim();
-  const s=document.getElementById('ls').value;
+  const u=document.getElementById('lu').value.trim(), s=document.getElementById('ls').value;
   if(!u||!s){lerro('Preencha usuario e senha');return;}
   const r=await req('POST','/api/login',{user:u,senha:s});
-  if(r.ok){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    init();
-  } else lerro(r.erro||'Erro ao entrar');
+  if(r.ok){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';init();}
+  else lerro(r.erro||'Erro ao entrar');
 }
 function lerro(m){const e=document.getElementById('le');e.textContent=m;e.style.display='block';}
 async function logout(){await req('POST','/api/logout');location.reload();}
 async function checkAuth(){
   const r=await req('GET','/api/me');
-  if(r.logado){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    init();
-  }
+  if(r.logado){document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';init();}
 }
-async function init(){ await Promise.all([loadBots(),loadFunis()]); loadDash(); }
+async function init(){await Promise.all([loadBots(),loadFunis(),loadGlobais()]);loadDash();}
 
 // NAV
 function nav(p){
@@ -374,30 +476,36 @@ function nav(p){
   document.querySelector('.ni[data-p="'+p+'"]')?.classList.add('active');
   if(p==='dashboard')loadDash();
   if(p==='bots')loadBots();
+  if(p==='roteiros')loadRoteiros();
+  if(p==='globais')loadGlobais();
   if(p==='funis')loadFunis();
 }
 
 // DASHBOARD
 async function loadDash(){
-  const [st,b,ss]=await Promise.all([req('GET','/api/dashboard'),req('GET','/api/bots'),req('GET','/api/status')]);
+  const [st,b,ss,ciclo]=await Promise.all([req('GET','/api/dashboard'),req('GET','/api/bots'),req('GET','/api/status'),req('GET','/api/ciclo')]);
   document.getElementById('s-total').textContent=st.totalBots||0;
   document.getElementById('s-online').textContent=st.botsOnline||0;
   document.getElementById('s-offline').textContent=(st.totalBots-st.botsOnline)||0;
   document.getElementById('s-midias').textContent=st.totalMidias||0;
-  document.getElementById('s-funis').textContent=st.totalFunis||0;
+  document.getElementById('s-roteiros').textContent=st.totalRoteiros||0;
+  document.getElementById('s-globais').textContent=st.totalGlobais||0;
   document.getElementById('s-conv').textContent=st.totalConversas||0;
+  const cb=document.getElementById('ciclo-status');
+  if(ciclo.diaAtual) cb.innerHTML='Ciclo ativo — <strong>Dia '+ciclo.diaAtual+' de '+ciclo.totalDias+'</strong> | Inicio: '+new Date(ciclo.inicio).toLocaleDateString('pt-BR');
+  else cb.innerHTML='Nenhum roteiro configurado ainda. Va em <strong>Roteiros</strong> para criar o ciclo de dias.';
   const tb=document.getElementById('dash-tb');
   if(!b.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Nenhum bot cadastrado</div></td></tr>';return;}
   tb.innerHTML=b.map(x=>{
     const on=!!ss[x.id];
     const ul=x.ultimaMsg?new Date(x.ultimaMsg).toLocaleString('pt-BR'):'—';
     return`<tr>
-      <td><div class="nc"><div class="av">${x.nome[0]}</div>${x.nome}</div></td>
-      <td style="font-size:12px;color:var(--muted)">${x.cidade} · ${x.idade} anos</td>
-      <td>${x.funil?x.funil.nome:'<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="badge bg-purple">${x._count?.midias||0} midias</span></td>
-      <td style="font-size:12px;color:var(--muted)">${ul}</td>
-      <td><span class="badge ${on?'bg-green':'bg-red'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
+      <td><div class="nc"><div class="av ${x.sexo==='M'?'m':''}">${x.nome[0]}</div>${x.nome}</div></td>
+      <td><span class="badge ${x.sexo==='M'?'bgb':'bgpu'}">${x.sexo==='M'?'Homem':'Mulher'}</span></td>
+      <td style="font-size:12px;color:var(--m)">${x.cidade} · ${x.idade}a</td>
+      <td><span class="badge bgpu">${x._count?.midias||0}</span></td>
+      <td style="font-size:12px;color:var(--m)">${ul}</td>
+      <td><span class="badge ${on?'bgg':'bgr'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
     </tr>`;
   }).join('');
 }
@@ -405,19 +513,20 @@ async function loadDash(){
 // BOTS
 async function loadBots(){
   const [b,ss,f]=await Promise.all([req('GET','/api/bots'),req('GET','/api/status'),req('GET','/api/funis')]);
-  bots=b; funis=f;
+  bots=b;funis=f;
   const tb=document.getElementById('bots-tb');
-  if(!b.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">Nenhum bot. Clique em "+ Novo Bot" para comecar.</div></td></tr>';return;}
+  if(!b.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">Nenhum bot. Clique em "+ Novo Bot".</div></td></tr>';return;}
   tb.innerHTML=b.map(x=>{
     const on=!!ss[x.id];
     return`<tr>
-      <td><div class="nc"><div class="av">${x.nome[0]}</div>${x.nome}</div></td>
-      <td style="font-size:12px;color:var(--muted)">${x.cidade} · ${x.idade} anos</td>
-      <td>${x.funil?x.funil.nome:'<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="badge bg-purple">${x._count?.midias||0}</span></td>
-      <td><span class="badge ${on?'bg-green':'bg-red'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
-      <td><div class="actions">
-        <button class="btn bsm ${on?'bd':'bg'}" onclick="toggle(${x.id})">${on?'Desligar':'Ligar'}</button>
+      <td><div class="nc"><div class="av ${x.sexo==='M'?'m':''}">${x.nome[0]}</div>${x.nome}</div></td>
+      <td><span class="badge ${x.sexo==='M'?'bgb':'bgpu'}">${x.sexo==='M'?'H':'M'}</span></td>
+      <td style="font-size:12px;color:var(--m)">${x.cidade} · ${x.idade}a</td>
+      <td>${x.funil?x.funil.nome:'<span style="color:var(--m)">—</span>'}</td>
+      <td><span class="badge bgpu">${x._count?.midias||0}</span></td>
+      <td><span class="badge ${on?'bgg':'bgr'}"><span class="dot"></span>${on?'Online':'Offline'}</span></td>
+      <td><div class="acts">
+        <button class="btn bsm ${on?'bd':'bgreen'}" onclick="toggle(${x.id})">${on?'Desligar':'Ligar'}</button>
         <button class="btn bs bsm" onclick="openDetail(${x.id})">Midias</button>
         <button class="btn bs bsm" onclick="editBot(${x.id})">Editar</button>
         <button class="btn bd bsm" onclick="delBot(${x.id})">Excluir</button>
@@ -427,24 +536,18 @@ async function loadBots(){
 }
 
 function openBot(bot){
-  document.getElementById('bot-id').value='';
-  document.getElementById('bot-nome').value='';
-  document.getElementById('bot-idade').value=24;
-  document.getElementById('bot-cidade').value='';
-  document.getElementById('bot-token').value='';
-  document.getElementById('bot-grupo').value='';
-  document.getElementById('mbot-titulo').textContent='Novo Bot';
+  document.getElementById('bot-id').value='';document.getElementById('bot-nome').value='';
+  document.getElementById('bot-sexo').value='F';document.getElementById('bot-idade').value=24;
+  document.getElementById('bot-cidade').value='';document.getElementById('bot-token').value='';
+  document.getElementById('bot-grupo').value='';document.getElementById('mbot-t').textContent='Novo Bot';
   const sel=document.getElementById('bot-funil');
   sel.innerHTML='<option value="">Sem funil</option>'+funis.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
   if(bot){
-    document.getElementById('mbot-titulo').textContent='Editar Bot';
-    document.getElementById('bot-id').value=bot.id;
-    document.getElementById('bot-nome').value=bot.nome;
-    document.getElementById('bot-idade').value=bot.idade;
-    document.getElementById('bot-cidade').value=bot.cidade;
-    document.getElementById('bot-token').value=bot.token;
-    document.getElementById('bot-grupo').value=bot.grupoId;
-    if(bot.funilId)sel.value=bot.funilId;
+    document.getElementById('mbot-t').textContent='Editar Bot';
+    document.getElementById('bot-id').value=bot.id;document.getElementById('bot-nome').value=bot.nome;
+    document.getElementById('bot-sexo').value=bot.sexo||'F';document.getElementById('bot-idade').value=bot.idade;
+    document.getElementById('bot-cidade').value=bot.cidade;document.getElementById('bot-token').value=bot.token;
+    document.getElementById('bot-grupo').value=bot.grupoId;if(bot.funilId)sel.value=bot.funilId;
   }
   openM('mo-bot');
 }
@@ -453,215 +556,326 @@ function editBot(id){openBot(bots.find(b=>b.id===id));}
 async function saveBot(){
   const id=document.getElementById('bot-id').value;
   const nome=document.getElementById('bot-nome').value.trim();
+  const sexo=document.getElementById('bot-sexo').value;
   const idade=document.getElementById('bot-idade').value;
   const cidade=document.getElementById('bot-cidade').value.trim()||'Sao Paulo';
   const token=document.getElementById('bot-token').value.trim();
   const grupoId=document.getElementById('bot-grupo').value.trim();
   const funilId=document.getElementById('bot-funil').value;
   if(!nome||!token||!grupoId){toast('Preencha nome, token e ID do grupo','err');return;}
-  const body={nome,idade,cidade,token,grupoId,funilId};
+  const body={nome,sexo,idade,cidade,token,grupoId,funilId};
   const r=id?await req('PUT','/api/bots/'+id,{...body,ativo:true}):await req('POST','/api/bots',body);
   if(r.erro){toast(r.erro,'err');return;}
-  toast(id?'Bot atualizado!':'Bot criado! Agora adicione midias a ele.','ok');
-  closeM('mo-bot'); loadBots(); loadDash();
+  toast(id?'Bot atualizado!':'Bot criado!','ok');closeM('mo-bot');loadBots();loadDash();
 }
 
 async function toggle(id){
   const r=await req('POST','/api/bots/'+id+'/toggle');
-  toast(r.ativo?'Bot ligado!':'Bot desligado!','ok');
-  loadBots(); loadDash();
+  toast(r.ativo?'Bot ligado!':'Bot desligado!','ok');loadBots();loadDash();
 }
-
 async function delBot(id){
-  if(!confirm('Excluir este bot e todas as midias?'))return;
-  await req('DELETE','/api/bots/'+id);
-  toast('Bot excluido','ok'); loadBots(); loadDash();
+  if(!confirm('Excluir este bot?'))return;
+  await req('DELETE','/api/bots/'+id);toast('Bot excluido','ok');loadBots();loadDash();
 }
 
-// DETALHE / MIDIAS
+// MIDIAS
 async function openDetail(id){
-  detBot=id;
-  const b=bots.find(x=>x.id===id);
+  detBot=id;const b=bots.find(x=>x.id===id);
   document.getElementById('det-nome').textContent=b.nome;
-  document.getElementById('det-sub').textContent=b.cidade+' · '+b.idade+' anos · Midias postadas no grupo';
+  document.getElementById('det-sub').textContent=b.cidade+' · '+b.idade+' anos · Midias para postar no grupo';
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-detail').classList.add('active');
-  tab('apresentacao');
-  await loadMidias();
+  tabMidia('apresentacao');await loadMidias();
 }
-
-function tab(c){
+function tabMidia(c){
   catAtiva=c;
   const cats=['apresentacao','rotina','interacao','chamada_pvt'];
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',cats[i]===c));
   document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
   document.getElementById('tc-'+c).classList.add('active');
 }
-
 async function loadMidias(){
   if(!detBot)return;
   const ms=await req('GET','/api/bots/'+detBot+'/midias');
   ['apresentacao','rotina','interacao','chamada_pvt'].forEach(c=>{
     const g=document.getElementById('mg-'+c);
     const lst=ms.filter(m=>m.categoria===c);
-    if(!lst.length){g.innerHTML='<div class="empty">Nenhuma midia nesta categoria.<br>Clique em "+ Adicionar Midia" e selecione esta categoria.</div>';return;}
+    if(!lst.length){g.innerHTML='<div class="empty">Sem midias. Clique em "+ Adicionar Midia".</div>';return;}
     g.innerHTML=lst.map(m=>`
       <div class="mc2">
-        <div class="mc2-top">
-          <span class="badge bg-blue">${m.tipo}</span>
-          <div class="actions">
-            <button class="btn bs bsm" onclick="editMidia(${m.id})">Editar</button>
-            <button class="btn bd bsm" onclick="delMidia(${m.id})">X</button>
-          </div>
-        </div>
+        <div class="mc2-top"><span class="badge bgb">${m.tipo}</span>
+          <div class="acts"><button class="btn bs bsm" onclick="editMidia(${m.id})">Editar</button><button class="btn bd bsm" onclick="delMidia(${m.id})">X</button></div></div>
         ${m.tipo==='foto'&&m.url?`<img src="${m.url}" class="mimg" onerror="this.style.display='none'" />`:''}
-        ${m.url?`<p style="font-size:11px;color:var(--muted);word-break:break-all">${m.url.length>55?m.url.substring(0,55)+'...':m.url}</p>`:''}
-        <p style="font-size:12px">${m.legenda||'<span style="color:var(--muted)">Sem legenda</span>'}</p>
+        ${m.url?`<p style="font-size:11px;color:var(--m);word-break:break-all">${m.url.length>50?m.url.substring(0,50)+'...':m.url}</p>`:''}
+        <p style="font-size:12px">${m.legenda||'<span style="color:var(--m)">Sem legenda</span>'}</p>
       </div>`).join('');
   });
 }
-
+function toggleUrl(){document.getElementById('url-group').style.display=document.getElementById('mid-tipo').value==='texto'?'none':'block';}
+async function editMidia(id){const ms=await req('GET','/api/bots/'+detBot+'/midias');const m=ms.find(x=>x.id===id);if(m)openMidia(m);}
 function openMidia(m){
-  document.getElementById('mid-id').value='';
-  document.getElementById('mid-cat').value=catAtiva;
-  document.getElementById('mid-tipo').value='foto';
-  document.getElementById('mid-url').value='';
-  document.getElementById('mid-leg').value='';
-  document.getElementById('mmid-titulo').textContent='Adicionar Midia';
+  document.getElementById('mid-id').value='';document.getElementById('mid-cat').value=catAtiva;
+  document.getElementById('mid-tipo').value='foto';document.getElementById('mid-url').value='';
+  document.getElementById('mid-leg').value='';document.getElementById('mmid-t').textContent='Adicionar Midia';
   document.getElementById('url-group').style.display='block';
-  if(m){
-    document.getElementById('mmid-titulo').textContent='Editar Midia';
-    document.getElementById('mid-id').value=m.id;
-    document.getElementById('mid-cat').value=m.categoria;
-    document.getElementById('mid-tipo').value=m.tipo;
-    document.getElementById('mid-url').value=m.url||'';
-    document.getElementById('mid-leg').value=m.legenda||'';
-    document.getElementById('url-group').style.display=m.tipo==='texto'?'none':'block';
-  }
+  if(m){document.getElementById('mmid-t').textContent='Editar Midia';document.getElementById('mid-id').value=m.id;
+    document.getElementById('mid-cat').value=m.categoria;document.getElementById('mid-tipo').value=m.tipo;
+    document.getElementById('mid-url').value=m.url||'';document.getElementById('mid-leg').value=m.legenda||'';
+    document.getElementById('url-group').style.display=m.tipo==='texto'?'none':'block';}
   openM('mo-midia');
 }
-function toggleUrl(){document.getElementById('url-group').style.display=document.getElementById('mid-tipo').value==='texto'?'none':'block';}
-
-async function editMidia(id){
-  const ms=await req('GET','/api/bots/'+detBot+'/midias');
-  const m=ms.find(x=>x.id===id);
-  if(m)openMidia(m);
-}
-
 async function saveMidia(){
   const id=document.getElementById('mid-id').value;
-  const categoria=document.getElementById('mid-cat').value;
-  const tipo=document.getElementById('mid-tipo').value;
-  const url=document.getElementById('mid-url').value.trim();
-  const legenda=document.getElementById('mid-leg').value.trim();
-  if(tipo!=='texto'&&!url){toast('Informe a URL da midia','err');return;}
+  const categoria=document.getElementById('mid-cat').value,tipo=document.getElementById('mid-tipo').value;
+  const url=document.getElementById('mid-url').value.trim(),legenda=document.getElementById('mid-leg').value.trim();
+  if(tipo!=='texto'&&!url){toast('Informe a URL','err');return;}
   const body={categoria,tipo,url,legenda};
   const r=id?await req('PUT','/api/midias/'+id,body):await req('POST','/api/bots/'+detBot+'/midias',body);
   if(r.erro){toast(r.erro,'err');return;}
-  toast(id?'Midia atualizada!':'Midia adicionada!','ok');
-  closeM('mo-midia'); loadMidias(); loadDash();
+  toast('Salvo!','ok');closeM('mo-midia');loadMidias();loadDash();
+}
+async function delMidia(id){if(!confirm('Excluir?'))return;await req('DELETE','/api/midias/'+id);toast('Excluida','ok');loadMidias();}
+
+// ROTEIROS
+async function loadRoteiros(){
+  const [roteiros,ciclo]=await Promise.all([req('GET','/api/roteiros'),req('GET','/api/ciclo')]);
+  document.getElementById('ciclo-dia-num').textContent=ciclo.diaAtual||'—';
+  document.getElementById('ciclo-total').textContent=ciclo.totalDias||0;
+  document.getElementById('ciclo-inicio').textContent=ciclo.inicio?new Date(ciclo.inicio).toLocaleDateString('pt-BR'):'—';
+  const g=document.getElementById('dias-grid');
+  if(!roteiros.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum dia configurado. Clique em "+ Novo Dia" ou importe um JSON.</div>';return;}
+  g.innerHTML=roteiros.map(r=>`
+    <div class="dia-card ${ciclo.diaAtual===r.dia?'atual':''}" onclick="abrirEditorDia(${r.dia})">
+      <div class="dia-num">${r.dia}</div>
+      <div class="dia-ev">${r._count.eventos} evento${r._count.eventos!==1?'s':''}</div>
+      ${ciclo.diaAtual===r.dia?'<div style="font-size:10px;color:var(--p);margin-top:4px;font-weight:700">HOJE</div>':''}
+      <button class="btn bd bsm" style="margin-top:8px;width:100%" onclick="event.stopPropagation();delRoteiro(${r.dia})">Excluir</button>
+    </div>`).join('');
 }
 
-async function delMidia(id){
-  if(!confirm('Excluir esta midia?'))return;
-  await req('DELETE','/api/midias/'+id);
-  toast('Midia excluida','ok'); loadMidias(); loadDash();
+async function openNovoRoteiro(){
+  const roteiros=await req('GET','/api/roteiros');
+  const proximoDia=roteiros.length?Math.max(...roteiros.map(r=>r.dia))+1:1;
+  diaSendoEditado=proximoDia;eventosEditor=[];
+  document.getElementById('editor-titulo').textContent='Dia '+proximoDia+' (Novo)';
+  renderEventosEditor();
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-editor-dia').classList.add('active');
+}
+
+async function abrirEditorDia(dia){
+  const roteiro=await req('GET','/api/roteiros/'+dia);
+  diaSendoEditado=dia;
+  eventosEditor=(roteiro?.eventos||[]).map(e=>({botId:e.botId,botNome:e.bot?.nome||'Bot '+e.botId,horario:e.horario,texto:e.texto||'',mediaUrl:e.mediaUrl||'',mediaTipo:e.mediaTipo||'foto'}));
+  document.getElementById('editor-titulo').textContent='Editando Dia '+dia;
+  renderEventosEditor();
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-editor-dia').classList.add('active');
+}
+
+function renderEventosEditor(){
+  const el=document.getElementById('eventos-editor-lista');
+  if(!eventosEditor.length){el.innerHTML='<div class="empty">Nenhum evento. Clique em "+ Adicionar Evento".</div>';return;}
+  const sorted=[...eventosEditor].sort((a,b)=>a.horario.localeCompare(b.horario));
+  el.innerHTML=sorted.map((e,i)=>`
+    <div class="ev-row">
+      <span class="ev-time">${e.horario}</span>
+      <span class="ev-bot">${e.botNome||'Bot '+e.botId}</span>
+      <span class="ev-texto">${e.texto||'(midia)'}</span>
+      ${e.mediaUrl?'<span class="badge bgpu" style="font-size:10px;flex-shrink:0">+midia</span>':''}
+      <div class="ev-acts">
+        <button class="btn bd bsm" onclick="remEvento(${eventosEditor.indexOf(e)})">X</button>
+      </div>
+    </div>`).join('');
+}
+
+function openAddEvento(){
+  document.getElementById('ev-idx').value=-1;
+  document.getElementById('ev-hora').value='';document.getElementById('ev-texto').value='';
+  document.getElementById('ev-media').value='';document.getElementById('ev-tipo').value='foto';
+  const sel=document.getElementById('ev-bot');
+  sel.innerHTML=bots.map(b=>`<option value="${b.id}">${b.nome} (${b.sexo==='M'?'H':'M'})</option>`).join('');
+  openM('mo-evento');
+}
+
+function addEvento(){
+  const hora=document.getElementById('ev-hora').value.trim();
+  const botId=parseInt(document.getElementById('ev-bot').value);
+  const texto=document.getElementById('ev-texto').value.trim();
+  const mediaUrl=document.getElementById('ev-media').value.trim();
+  const mediaTipo=document.getElementById('ev-tipo').value;
+  if(!hora){toast('Informe o horario','err');return;}
+  if(!texto&&!mediaUrl){toast('Informe texto ou URL de midia','err');return;}
+  const h=hora.includes(':')?hora.split(':').length===2?hora+':00':hora:'00:00:00';
+  const botNome=bots.find(b=>b.id===botId)?.nome||'Bot '+botId;
+  eventosEditor.push({botId,botNome,horario:h,texto,mediaUrl,mediaTipo});
+  renderEventosEditor();closeM('mo-evento');
+}
+
+function remEvento(i){eventosEditor.splice(i,1);renderEventosEditor();}
+
+async function salvarRoteiroDia(){
+  if(!diaSendoEditado){toast('Erro: dia nao definido','err');return;}
+  const r=await req('POST','/api/roteiros/'+diaSendoEditado,{eventos:eventosEditor});
+  if(r&&r.erro){
+    if(r.erro.includes('ja existe')||r.erro.includes('Unique')){
+      const r2=await req('PUT','/api/roteiros/'+diaSendoEditado,{eventos:eventosEditor});
+      if(r2.erro){toast(r2.erro,'err');return;}
+    } else {toast(r.erro,'err');return;}
+  }
+  toast('Dia '+diaSendoEditado+' salvo!','ok');nav('roteiros');
+}
+
+async function delRoteiro(dia){
+  if(!confirm('Excluir o dia '+dia+'?'))return;
+  await req('DELETE','/api/roteiros/'+dia);toast('Dia excluido','ok');loadRoteiros();
+}
+
+async function reiniciarCiclo(){
+  if(!confirm('Reiniciar ciclo do Dia 1? O ciclo vai comecar do zero hoje.'))return;
+  await req('POST','/api/ciclo/reiniciar');toast('Ciclo reiniciado!','ok');loadRoteiros();loadDash();
+}
+
+function openImportarRoteiro(){openM('mo-importar');document.getElementById('importar-json').value='';}
+async function importarRoteiro(){
+  let json;
+  try{json=JSON.parse(document.getElementById('importar-json').value);}
+  catch(e){toast('JSON invalido: '+e.message,'err');return;}
+  if(!json.dia||!json.eventos){toast('Formato invalido. Precisa de "dia" e "eventos"','err');return;}
+  const r=await req('POST','/api/roteiros/importar',json);
+  if(r.erro){toast(r.erro,'err');return;}
+  toast('Dia '+r.dia+' importado com '+r.eventos+' eventos!','ok');
+  closeM('mo-importar');loadRoteiros();
+}
+
+// GLOBAIS
+async function loadGlobais(){
+  globais=await req('GET','/api/globais');
+  const el=document.getElementById('globais-lista');
+  if(!globais.length){el.innerHTML='<div class="empty">Nenhum evento global. Clique em "+ Novo Evento".</div>';return;}
+  el.innerHTML=globais.map(g=>{
+    let vars=[];try{vars=JSON.parse(g.variacoes);}catch(_){}
+    return`<div class="gl-card">
+      <div class="gl-head">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="gl-hora">${g.horario}</div>
+          <div class="gl-nome">${g.nome}</div>
+          <span class="badge ${g.ativo?'bgg':'bgr'}">${g.ativo?'Ativo':'Pausado'}</span>
+        </div>
+        <div class="acts">
+          <button class="btn bs bsm" onclick="editGlobal(${g.id})">Editar</button>
+          <button class="btn bd bsm" onclick="toggleGlobal(${g.id},${!g.ativo})">${g.ativo?'Pausar':'Ativar'}</button>
+          <button class="btn bd bsm" onclick="delGlobal(${g.id})">Excluir</button>
+        </div>
+      </div>
+      <div>${vars.map(v=>`<span class="var-chip">${v}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function openGlobal(gl){
+  document.getElementById('gl-id').value='';document.getElementById('gl-nome').value='';
+  document.getElementById('gl-hora').value='';document.getElementById('gl-vars').value='';
+  document.getElementById('mgl-t').textContent='Novo Evento Global';
+  if(gl){
+    let vars=[];try{vars=JSON.parse(gl.variacoes);}catch(_){}
+    document.getElementById('mgl-t').textContent='Editar Evento Global';
+    document.getElementById('gl-id').value=gl.id;document.getElementById('gl-nome').value=gl.nome;
+    document.getElementById('gl-hora').value=gl.horario;document.getElementById('gl-vars').value=vars.join('\n');
+  }
+  openM('mo-global');
+}
+function editGlobal(id){openGlobal(globais.find(g=>g.id===id));}
+
+async function saveGlobal(){
+  const id=document.getElementById('gl-id').value;
+  const nome=document.getElementById('gl-nome').value.trim();
+  const horario=document.getElementById('gl-hora').value;
+  const vars=document.getElementById('gl-vars').value.split('\n').map(v=>v.trim()).filter(Boolean);
+  if(!nome||!horario){toast('Preencha nome e horario','err');return;}
+  if(!vars.length){toast('Adicione pelo menos uma variacao','err');return;}
+  const body={nome,horario,variacoes:vars};
+  const r=id?await req('PUT','/api/globais/'+id,body):await req('POST','/api/globais',body);
+  if(r.erro){toast(r.erro,'err');return;}
+  toast('Salvo!','ok');closeM('mo-global');loadGlobais();loadDash();
+}
+
+async function toggleGlobal(id,ativo){
+  const gl=globais.find(g=>g.id===id);
+  let vars=[];try{vars=JSON.parse(gl.variacoes);}catch(_){}
+  await req('PUT','/api/globais/'+id,{nome:gl.nome,horario:gl.horario,variacoes:vars,ativo});
+  toast(ativo?'Evento ativado!':'Evento pausado!','ok');loadGlobais();
+}
+
+async function delGlobal(id){
+  if(!confirm('Excluir este evento global?'))return;
+  await req('DELETE','/api/globais/'+id);toast('Excluido','ok');loadGlobais();loadDash();
 }
 
 // FUNIS
 async function loadFunis(){
   funis=await req('GET','/api/funis');
   const g=document.getElementById('funis-grid');
-  if(!funis.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum funil. Clique em "+ Novo Funil".</div>';return;}
+  if(!funis.length){g.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhum funil.</div>';return;}
   g.innerHTML=funis.map(f=>`
     <div class="fc">
-      <div class="fc-head">
-        <div><div class="fc-nome">${f.nome}</div><div class="fc-desc">${f.descricao||'Sem descricao'}</div></div>
-        <span class="badge bg-yellow">${f.passos.length} passo${f.passos.length!==1?'s':''}</span>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-weight:600">${f.nome}</div><div style="font-size:12px;color:var(--m)">${f.descricao||'—'}</div></div>
+        <span class="badge bgy">${f.passos.length} passo${f.passos.length!==1?'s':''}</span>
       </div>
-      <div style="margin-bottom:14px;">
-        ${f.passos.slice(0,3).map((p,i)=>`
-          <div class="passo-row">
-            <span class="passo-idx">${i+1}</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.texto||'(midia)'}</span>
-            ${p.mediaUrl?'<span class="badge bg-purple" style="font-size:10px">+midia</span>':''}
-          </div>`).join('')}
-        ${f.passos.length>3?`<div style="font-size:11px;color:var(--muted);padding-top:6px">+${f.passos.length-3} mais...</div>`:''}
-      </div>
-      <div style="display:flex;gap:6px;">
+      ${f.passos.slice(0,3).map((p,i)=>`
+        <div style="padding:5px 0;border-top:1px solid var(--b);font-size:12px;color:var(--m);display:flex;gap:6px;">
+          <span style="background:var(--s2);padding:1px 6px;border-radius:4px;font-weight:600;font-size:11px">${i+1}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.texto||'(midia)'}</span>
+        </div>`).join('')}
+      ${f.passos.length>3?`<div style="font-size:11px;color:var(--m);padding-top:4px">+${f.passos.length-3} mais...</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:12px;">
         <button class="btn bs bsm" style="flex:1" onclick="editFunil(${f.id})">Editar</button>
         <button class="btn bd bsm" onclick="delFunil(${f.id})">Excluir</button>
       </div>
     </div>`).join('');
 }
 
+let passos=[];
 function openFunil(f){
-  passos=[];
-  document.getElementById('fun-id').value='';
-  document.getElementById('fun-nome').value='';
-  document.getElementById('fun-desc').value='';
-  document.getElementById('mfun-titulo').textContent='Novo Funil';
-  if(f){
-    document.getElementById('mfun-titulo').textContent='Editar Funil';
-    document.getElementById('fun-id').value=f.id;
-    document.getElementById('fun-nome').value=f.nome;
-    document.getElementById('fun-desc').value=f.descricao||'';
-    passos=f.passos.map(p=>({texto:p.texto||'',mediaUrl:p.mediaUrl||'',mediaTipo:p.mediaTipo||'foto',delay:p.delay||2}));
-  }
-  renderPassos(); openM('mo-funil');
+  passos=[];document.getElementById('fun-id').value='';document.getElementById('fun-nome').value='';document.getElementById('fun-desc').value='';
+  document.getElementById('mfun-t').textContent='Novo Funil';
+  if(f){document.getElementById('mfun-t').textContent='Editar Funil';document.getElementById('fun-id').value=f.id;document.getElementById('fun-nome').value=f.nome;document.getElementById('fun-desc').value=f.descricao||'';
+    passos=f.passos.map(p=>({texto:p.texto||'',mediaUrl:p.mediaUrl||'',mediaTipo:p.mediaTipo||'foto',delay:p.delay||2}));}
+  renderPassos();openM('mo-funil');
 }
 function editFunil(id){openFunil(funis.find(f=>f.id===id));}
 function addPasso(){passos.push({texto:'',mediaUrl:'',mediaTipo:'foto',delay:2});renderPassos();}
 function remPasso(i){passos.splice(i,1);renderPassos();}
 function upPasso(i,k,v){passos[i][k]=v;}
-
 function renderPassos(){
   const l=document.getElementById('passos-lista');
-  if(!passos.length){l.innerHTML='<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px;">Nenhum passo. Clique em "+ Adicionar Passo".</div>';return;}
+  if(!passos.length){l.innerHTML='<div style="text-align:center;color:var(--m);font-size:13px;padding:16px;">Nenhum passo ainda.</div>';return;}
   l.innerHTML=passos.map((p,i)=>`
     <div class="pc">
       <div class="pc-h"><span class="pn">PASSO ${i+1}</span><button class="btn bd bsm" onclick="remPasso(${i})">Remover</button></div>
-      <div class="fg" style="margin-bottom:8px"><label style="font-size:11px">Texto (variaveis: {nome} {idade} {cidade})</label>
-        <textarea style="min-height:52px" onchange="upPasso(${i},'texto',this.value)">${p.texto}</textarea></div>
+      <div class="fg" style="margin-bottom:8px"><label style="font-size:11px">Texto</label><textarea style="min-height:52px" onchange="upPasso(${i},'texto',this.value)">${p.texto}</textarea></div>
       <div class="g2" style="gap:8px">
-        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">URL de Midia (opcional)</label>
-          <input type="text" placeholder="https://..." value="${p.mediaUrl}" onchange="upPasso(${i},'mediaUrl',this.value)" /></div>
-        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">Tipo</label>
-          <select onchange="upPasso(${i},'mediaTipo',this.value)">
-            <option value="foto" ${p.mediaTipo==='foto'?'selected':''}>Foto</option>
-            <option value="video" ${p.mediaTipo==='video'?'selected':''}>Video</option>
-            <option value="audio" ${p.mediaTipo==='audio'?'selected':''}>Audio</option>
-          </select></div>
+        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">URL Midia (opcional)</label><input type="text" value="${p.mediaUrl}" onchange="upPasso(${i},'mediaUrl',this.value)" /></div>
+        <div class="fg" style="margin-bottom:0"><label style="font-size:11px">Tipo</label><select onchange="upPasso(${i},'mediaTipo',this.value)"><option value="foto" ${p.mediaTipo==='foto'?'selected':''}>Foto</option><option value="video" ${p.mediaTipo==='video'?'selected':''}>Video</option><option value="audio" ${p.mediaTipo==='audio'?'selected':''}>Audio</option></select></div>
       </div>
-      <div class="fg" style="margin-top:8px;margin-bottom:0"><label style="font-size:11px">Delay (segundos antes de enviar)</label>
-        <input type="number" value="${p.delay}" min="0" max="15" style="max-width:80px" onchange="upPasso(${i},'delay',this.value)" /></div>
+      <div class="fg" style="margin-top:8px;margin-bottom:0"><label style="font-size:11px">Delay (segundos)</label><input type="number" value="${p.delay}" min="0" max="15" style="max-width:80px" onchange="upPasso(${i},'delay',this.value)" /></div>
     </div>`).join('');
 }
-
 async function saveFunil(){
-  const id=document.getElementById('fun-id').value;
-  const nome=document.getElementById('fun-nome').value.trim();
-  const descricao=document.getElementById('fun-desc').value.trim();
-  if(!nome){toast('Informe o nome do funil','err');return;}
-  if(!passos.length){toast('Adicione pelo menos um passo','err');return;}
+  const id=document.getElementById('fun-id').value,nome=document.getElementById('fun-nome').value.trim(),descricao=document.getElementById('fun-desc').value.trim();
+  if(!nome){toast('Informe o nome','err');return;}
   document.querySelectorAll('#passos-lista textarea').forEach((el,i)=>{if(passos[i])passos[i].texto=el.value;});
-  const body={nome,descricao,passos};
-  const r=id?await req('PUT','/api/funis/'+id,body):await req('POST','/api/funis',body);
+  const r=id?await req('PUT','/api/funis/'+id,{nome,descricao,passos}):await req('POST','/api/funis',{nome,descricao,passos});
   if(r.erro){toast(r.erro,'err');return;}
-  toast(id?'Funil atualizado!':'Funil criado!','ok');
-  closeM('mo-funil'); loadFunis();
+  toast('Salvo!','ok');closeM('mo-funil');loadFunis();
 }
-
-async function delFunil(id){
-  if(!confirm('Excluir este funil?'))return;
-  await req('DELETE','/api/funis/'+id);
-  toast('Funil excluido','ok'); loadFunis();
-}
+async function delFunil(id){if(!confirm('Excluir?'))return;await req('DELETE','/api/funis/'+id);toast('Excluido','ok');loadFunis();}
 
 // UTILS
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
-function toast(msg,tipo){const e=document.getElementById('toast');e.textContent=msg;e.className='show '+(tipo||'ok');setTimeout(()=>e.classList.remove('show'),3000);}
+function toast(msg,tipo){const e=document.getElementById('toast');e.textContent=msg;e.className='show '+(tipo||'ok');setTimeout(()=>e.classList.remove('show'),3500);}
 document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
 checkAuth();
