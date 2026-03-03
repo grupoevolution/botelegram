@@ -299,6 +299,45 @@ app.post("/api/ciclo/reiniciar", auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ---- TESTE MANUAL ----
+// Envia mensagem/midia imediatamente para bots selecionados
+app.post("/api/teste/enviar", auth, async (req, res) => {
+  const { botIds, texto, mediaUrl, mediaTipo } = req.body;
+  if (!botIds || !botIds.length) return res.status(400).json({ erro: "Selecione pelo menos um bot" });
+  if (!texto && !mediaUrl) return res.status(400).json({ erro: "Informe texto ou URL de midia" });
+
+  const botsAtivos = getBotsAtivos();
+  const resultados = [];
+
+  for (const botId of botIds) {
+    const inst = botsAtivos.get(parseInt(botId));
+    if (!inst) { resultados.push({ botId, ok: false, erro: "Bot offline" }); continue; }
+
+    const cfg = await prisma.bot.findUnique({ where: { id: parseInt(botId) } });
+    if (!cfg) { resultados.push({ botId, ok: false, erro: "Bot nao encontrado" }); continue; }
+
+    try {
+      const textoFinal = (texto || "").replace(/{nome}/g, cfg.nome).replace(/{idade}/g, cfg.idade).replace(/{cidade}/g, cfg.cidade);
+      if (mediaUrl) {
+        const caption = textoFinal;
+        const tipo = mediaTipo || "foto";
+        if (tipo === "foto")       await inst.bot.sendPhoto(cfg.grupoId, mediaUrl, { caption });
+        else if (tipo === "video") await inst.bot.sendVideo(cfg.grupoId, mediaUrl, { caption });
+        else if (tipo === "audio") await inst.bot.sendAudio(cfg.grupoId, mediaUrl);
+      } else {
+        await inst.bot.sendMessage(cfg.grupoId, textoFinal);
+      }
+      resultados.push({ botId, nome: cfg.nome, ok: true });
+    } catch (err) {
+      resultados.push({ botId, nome: cfg.nome, ok: false, erro: err.message });
+    }
+  }
+
+  const ok = resultados.filter(r => r.ok).length;
+  const fail = resultados.filter(r => !r.ok).length;
+  res.json({ ok, fail, resultados });
+});
+
 // ---- DASHBOARD ----
 app.get("/api/dashboard", auth, async (req, res) => {
   const [totalBots, totalMidias, totalFunis, totalConversas, totalRoteiros, totalGlobais] = await Promise.all([
