@@ -4,7 +4,7 @@ const session = require("express-session");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
-const { iniciarTodosBots, iniciarBot, pararBot, getStatus, getBotsAtivos } = require("./botManager");
+const { iniciarTodosBots, iniciarBot, pararBot, getStatus, getBotsAtivos, reagendarCamadas } = require("./botManager");
 
 const app = express();
 const prisma = new PrismaClient();
@@ -87,6 +87,7 @@ app.post("/api/bots", auth, async (req, res) => {
       data: { nome, idade: parseInt(idade)||24, cidade: cidade||"Sao Paulo", sexo: sexo||"F", token, grupoId, funilId: funilId ? parseInt(funilId) : null },
     });
     await iniciarBot(bot);
+    await reagendarCamadas();
     res.json(bot);
   } catch (err) { res.status(400).json({ erro: err.message }); }
 });
@@ -100,6 +101,7 @@ app.put("/api/bots/:id", auth, async (req, res) => {
       data: { nome, idade: parseInt(idade)||24, cidade, sexo: sexo||"F", token, grupoId, funilId: funilId ? parseInt(funilId) : null, ativo: ativo === "true" || ativo === true },
     });
     if (bot.ativo) await iniciarBot(bot); else await pararBot(id);
+    await reagendarCamadas();
     res.json(bot);
   } catch (err) { res.status(400).json({ erro: err.message }); }
 });
@@ -117,6 +119,7 @@ app.post("/api/bots/:id/toggle", auth, async (req, res) => {
   const novoAtivo = !bot.ativo;
   await prisma.bot.update({ where: { id }, data: { ativo: novoAtivo } });
   if (novoAtivo) await iniciarBot({ ...bot, ativo: true }); else await pararBot(id);
+  await reagendarCamadas();
   res.json({ ativo: novoAtivo });
 });
 
