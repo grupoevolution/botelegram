@@ -155,6 +155,11 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
           Globais Diarios
         </div>
+        <div class="ns">Ferramentas</div>
+        <div class="ni" data-p="teste" onclick="nav('teste')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Envio de Teste
+        </div>
         <div class="ns">Privado</div>
         <div class="ni" data-p="funis" onclick="nav('funis')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -294,6 +299,54 @@
         <div class="tc" id="tc-rotina"><div class="mg" id="mg-rotina"></div></div>
         <div class="tc" id="tc-interacao"><div class="mg" id="mg-interacao"></div></div>
         <div class="tc" id="tc-chamada_pvt"><div class="mg" id="mg-chamada_pvt"></div></div>
+      </div>
+
+      <!-- TESTE -->
+      <div class="page" id="page-teste">
+        <div class="ph">
+          <div><h2>Envio de Teste</h2><p>Envia mensagem imediatamente pelos bots selecionados</p></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+          <div>
+            <div style="background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;">
+              <div class="sl" style="margin-bottom:12px;">Selecionar Bots</div>
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button class="btn bs bsm" onclick="testeSelectAll()">Todos</button>
+                <button class="btn bs bsm" onclick="testeSelectNone()">Nenhum</button>
+                <button class="btn bs bsm" onclick="testeSelectFem()">So femininos</button>
+              </div>
+              <div id="teste-bots-lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;margin-bottom:16px;">
+              <div class="sl" style="margin-bottom:12px;">Mensagem</div>
+              <div class="fg">
+                <label>Tipo</label>
+                <select id="teste-tipo" onchange="toggleTesteUrl()">
+                  <option value="texto">Somente Texto</option>
+                  <option value="foto">Foto</option>
+                  <option value="video">Video</option>
+                  <option value="audio">Audio</option>
+                </select>
+              </div>
+              <div class="fg" id="teste-url-group" style="display:none">
+                <label>URL da Midia</label>
+                <input type="text" id="teste-url" placeholder="https://..." />
+              </div>
+              <div class="fg">
+                <label>Texto / Legenda</label>
+                <textarea id="teste-texto" style="min-height:80px" placeholder="Ex: oi gente, {nome} aqui!"></textarea>
+                <small>Variaveis: <code>{nome}</code> <code>{idade}</code> <code>{cidade}</code></small>
+              </div>
+              <button class="btn bp" style="width:100%;justify-content:center;" onclick="enviarTeste()">Enviar Agora</button>
+            </div>
+            <div id="teste-resultado" style="display:none;background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:16px;">
+              <div class="sl" style="margin-bottom:10px;">Resultado</div>
+              <div id="teste-resultado-content"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -479,6 +532,7 @@ function nav(p){
   if(p==='roteiros')loadRoteiros();
   if(p==='globais')loadGlobais();
   if(p==='funis')loadFunis();
+  if(p==='teste')loadTesteBots();
 }
 
 // DASHBOARD
@@ -891,6 +945,50 @@ function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function toast(msg,tipo){const e=document.getElementById('toast');e.textContent=msg;e.className='show '+(tipo||'ok');setTimeout(()=>e.classList.remove('show'),3500);}
 document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// TESTE
+async function loadTesteBots(){
+  const [b, ss] = await Promise.all([req('GET','/api/bots'), req('GET','/api/status')]);
+  bots = b;
+  const el = document.getElementById('teste-bots-lista');
+  if(!b.length){el.innerHTML='<div style="color:var(--m);font-size:13px">Nenhum bot cadastrado</div>';return;}
+  el.innerHTML = b.map(x => {
+    const on = !!ss[x.id];
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border:1px solid var(--b);border-radius:8px;cursor:pointer;">
+      <input type="checkbox" class="teste-chk" data-id="${x.id}" data-sexo="${x.sexo||'F'}" ${on?'':'disabled'} style="accent-color:var(--p)" />
+      <div class="av ${x.sexo==='M'?'m':''}" style="width:24px;height:24px;font-size:11px">${x.nome[0]}</div>
+      <span style="flex:1;font-size:13px">${x.nome}</span>
+      <span class="badge ${on?'bgg':'bgr'}" style="font-size:10px">${on?'Online':'Offline'}</span>
+    </label>`;
+  }).join('');
+}
+function testeSelectAll(){document.querySelectorAll('.teste-chk:not(:disabled)').forEach(c=>c.checked=true);}
+function testeSelectNone(){document.querySelectorAll('.teste-chk').forEach(c=>c.checked=false);}
+function testeSelectFem(){document.querySelectorAll('.teste-chk:not(:disabled)').forEach(c=>c.checked=c.dataset.sexo==='F');}
+function toggleTesteUrl(){document.getElementById('teste-url-group').style.display=document.getElementById('teste-tipo').value==='texto'?'none':'block';}
+
+async function enviarTeste(){
+  const tipo = document.getElementById('teste-tipo').value;
+  const texto = document.getElementById('teste-texto').value.trim();
+  const mediaUrl = document.getElementById('teste-url').value.trim();
+  const selecionados = [...document.querySelectorAll('.teste-chk:checked')].map(c=>parseInt(c.dataset.id));
+  if(!selecionados.length){toast('Selecione pelo menos um bot','err');return;}
+  if(tipo!=='texto'&&!mediaUrl){toast('Informe a URL da midia','err');return;}
+  if(!texto&&!mediaUrl){toast('Informe o texto ou midia','err');return;}
+  const btn = document.querySelector('#page-teste .btn-primary, #page-teste .bp');
+  const r = await req('POST','/api/teste/enviar',{botIds:selecionados,texto,mediaUrl:mediaUrl||null,mediaTipo:tipo!=='texto'?tipo:null});
+  if(r.erro){toast(r.erro,'err');return;}
+  toast(`Enviado: ${r.ok} ok, ${r.fail} falha`,'ok');
+  const el = document.getElementById('teste-resultado');
+  const ec = document.getElementById('teste-resultado-content');
+  el.style.display='block';
+  ec.innerHTML = r.resultados.map(x=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--b);font-size:13px;">
+      <span class="badge ${x.ok?'bgg':'bgr'}">${x.ok?'OK':'ERRO'}</span>
+      <span>${x.nome||'Bot '+x.botId}</span>
+      ${!x.ok?`<span style="color:var(--r);font-size:11px">${x.erro}</span>`:''}
+    </div>`).join('');
+}
 
 checkAuth();
 </script>
