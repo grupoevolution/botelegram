@@ -2,39 +2,39 @@ const TelegramBot = require("node-telegram-bot-api");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
-const botsAtivos = new Map(); // id -> { bot, timers, nome, sexo }
+const botsAtivos = new Map();
 
 function log(nome, msg) {
   console.log(`[${new Date().toLocaleTimeString("pt-BR")}] [${nome}] ${msg}`);
 }
 
 // ============================================================
-// NÍVEIS DE ATIVIDADE — msgs/hora por período
+// NÍVEIS DE ATIVIDADE
 // ============================================================
 const NIVEIS = [
-  { inicio: "01:10", fim: "07:30", nivel: "baixo",    minMS: 72000,  maxMS: 120000 }, // 30-50/h
-  { inicio: "07:30", fim: "10:00", nivel: "alto",     minMS: 14400,  maxMS: 20000  }, // 180-250/h
-  { inicio: "10:00", fim: "12:40", nivel: "baixo",    minMS: 72000,  maxMS: 120000 },
-  { inicio: "12:40", fim: "14:20", nivel: "medio",    minMS: 30000,  maxMS: 45000  }, // 80-120/h
-  { inicio: "14:20", fim: "17:30", nivel: "baixo",    minMS: 72000,  maxMS: 120000 },
-  { inicio: "17:30", fim: "19:00", nivel: "alto",     minMS: 14400,  maxMS: 20000  },
-  { inicio: "19:00", fim: "23:00", nivel: "frenetico",minMS: 6000,   maxMS: 9000   }, // 400-600/h
-  { inicio: "23:00", fim: "00:10", nivel: "alto",     minMS: 14400,  maxMS: 20000  },
-  { inicio: "00:10", fim: "01:10", nivel: "medio",    minMS: 30000,  maxMS: 45000  },
+  { inicio: "01:10", fim: "07:30", minMS: 72000,  maxMS: 120000 },
+  { inicio: "07:30", fim: "10:00", minMS: 14400,  maxMS: 20000  },
+  { inicio: "10:00", fim: "12:40", minMS: 72000,  maxMS: 120000 },
+  { inicio: "12:40", fim: "14:20", minMS: 30000,  maxMS: 45000  },
+  { inicio: "14:20", fim: "17:30", minMS: 72000,  maxMS: 120000 },
+  { inicio: "17:30", fim: "19:00", minMS: 14400,  maxMS: 20000  },
+  { inicio: "19:00", fim: "23:00", minMS: 6000,   maxMS: 9000   },
+  { inicio: "23:00", fim: "00:10", minMS: 14400,  maxMS: 20000  },
+  { inicio: "00:10", fim: "01:10", minMS: 30000,  maxMS: 45000  },
 ];
+
+function toMin(str) {
+  const [h, m] = str.split(":").map(Number);
+  return h * 60 + m;
+}
 
 function getNivelAtual() {
   const agora = new Date();
   const hm = agora.getHours() * 60 + agora.getMinutes();
-  function toMin(str) {
-    const [h, m] = str.split(":").map(Number);
-    return h * 60 + m;
-  }
   for (const n of NIVEIS) {
-    const ini = toMin(n.inicio);
-    const fim = toMin(n.fim);
+    const ini = toMin(n.inicio), fim = toMin(n.fim);
     if (fim > ini) { if (hm >= ini && hm < fim) return n; }
-    else { if (hm >= ini || hm < fim) return n; } // passa meia-noite
+    else { if (hm >= ini || hm < fim) return n; }
   }
   return NIVEIS[0];
 }
@@ -48,6 +48,7 @@ function intervaloAleatorio() {
 // UTILS
 // ============================================================
 function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
 function resolverTexto(texto, bot) {
   if (!texto) return "";
@@ -57,11 +58,26 @@ function resolverTexto(texto, bot) {
     .replace(/{cidade}/g, bot.cidade);
 }
 
-async function getMidiaAleatoria(botId) {
-  const cats = ["apresentacao", "rotina", "interacao", "chamada_pvt"];
-  const cat = rand(cats);
-  const midias = await prisma.midia.findMany({ where: { botId, categoria: cat } });
-  return midias.length ? rand(midias) : null;
+// Converte "HH:MM" ou "HH:MM:SS" para ms desde meia-noite
+function horarioParaMs(str) {
+  const parts = str.split(":").map(Number);
+  return ((parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0)) * 1000;
+}
+
+// ms até um determinado horário hoje (ou amanhã se já passou)
+function msAteHorario(horarioMs) {
+  const agora = new Date();
+  const inicioHoje = new Date(agora);
+  inicioHoje.setHours(0, 0, 0, 0);
+  let alvo = inicioHoje.getTime() + horarioMs;
+  if (alvo <= agora.getTime()) alvo += 24 * 3600 * 1000;
+  return alvo - agora.getTime();
+}
+
+// Retorna ms aleatório dentro de uma janela [inicioMs, fimMs]
+function msAleatorioNaJanela(inicioMs, fimMs) {
+  if (fimMs < inicioMs) fimMs += 24 * 3600 * 1000; // passa meia-noite
+  return inicioMs + Math.floor(Math.random() * (fimMs - inicioMs));
 }
 
 async function enviarMensagem(bot, grupoId, config, texto, mediaUrl, mediaTipo) {
@@ -82,53 +98,137 @@ async function enviarMensagem(bot, grupoId, config, texto, mediaUrl, mediaTipo) 
 
 // ============================================================
 // CAMADA 1 — EVENTOS GLOBAIS DIÁRIOS
-// Bom dia, boa tarde, boa noite etc.
-// Só bots femininos participam
+// Suporta dois modos:
+//   - horário fixo: campo "horario" = "HH:MM", janela* ausentes
+//   - janela com pico: campos "janelaInicio", "janelaFim", "pico" no JSON de variacoes
+//     Ex: variacoes = { "pico": "08:30", "janelaInicio": "06:00", "janelaFim": "10:30", "textos": [...] }
 // ============================================================
+
+// Detecta se o evento usa janela ou horário fixo
+function parseEventoGlobal(ev) {
+  let variacoes = [];
+  let config = null;
+  try {
+    const parsed = JSON.parse(ev.variacoes);
+    if (Array.isArray(parsed)) {
+      variacoes = parsed;
+    } else if (parsed.textos) {
+      variacoes = parsed.textos;
+      config = parsed; // tem janelaInicio, janelaFim, pico
+    }
+  } catch (_) {}
+  return { variacoes, config };
+}
+
+// Distribui bots na janela com pico
+// Grupos: 30% antes do pico (inicio→pico), 50% no pico (±30min), 20% depois (pico→fim)
+function distribuirBotsNaJanela(botsF, janelaInicio, janelaFim, pico) {
+  const iniMs  = horarioParaMs(janelaInicio);
+  const fimMs  = horarioParaMs(janelaFim);
+  const picoMs = horarioParaMs(pico);
+  const picoIniMs = Math.max(iniMs, picoMs - 30 * 60 * 1000);
+  const picoFimMs = Math.min(fimMs, picoMs + 30 * 60 * 1000);
+
+  const shuffled = shuffle(botsF);
+  const total = shuffled.length;
+  const nAntes  = Math.floor(total * 0.30);
+  const nPico   = Math.floor(total * 0.50);
+  // o resto vai depois do pico
+
+  const resultado = [];
+
+  shuffled.slice(0, nAntes).forEach(inst => {
+    resultado.push({ inst, targetMs: msAleatorioNaJanela(iniMs, picoIniMs) });
+  });
+  shuffled.slice(nAntes, nAntes + nPico).forEach(inst => {
+    resultado.push({ inst, targetMs: msAleatorioNaJanela(picoIniMs, picoFimMs) });
+  });
+  shuffled.slice(nAntes + nPico).forEach(inst => {
+    resultado.push({ inst, targetMs: msAleatorioNaJanela(picoFimMs, fimMs) });
+  });
+
+  return resultado;
+}
+
+// Distribui bots em janela simples (sem pico)
+function distribuirBotsJanelaSimples(botsF, janelaInicio, janelaFim) {
+  const iniMs = horarioParaMs(janelaInicio);
+  const fimMs = horarioParaMs(janelaFim);
+  return shuffle(botsF).map(inst => ({
+    inst,
+    targetMs: msAleatorioNaJanela(iniMs, fimMs),
+  }));
+}
+
 function agendarEventosGlobais(instancias) {
   const timers = [];
 
   async function scheduleHoje() {
     const globais = await prisma.eventoGlobal.findMany({ where: { ativo: true } });
     const agora = new Date();
+    const agoraMs = agora.getHours() * 3600000 + agora.getMinutes() * 60000 + agora.getSeconds() * 1000;
+
+    const botsF = [...instancias.values()].filter(i => i.sexo === "F" && i.bot);
 
     for (const ev of globais) {
-      const [h, m] = ev.horario.split(":").map(Number);
-      const alvo = new Date();
-      alvo.setHours(h, m, 0, 0);
-      if (alvo <= agora) alvo.setDate(alvo.getDate() + 1);
+      const { variacoes, config: cfg } = parseEventoGlobal(ev);
+      if (!variacoes.length) continue;
 
-      const msAte = alvo.getTime() - Date.now();
+      if (cfg && cfg.janelaInicio && cfg.janelaFim) {
+        // MODO JANELA
+        const iniMs = horarioParaMs(cfg.janelaInicio);
+        const fimMs = horarioParaMs(cfg.janelaFim);
 
-      const t = setTimeout(async () => {
-        let variacoes = [];
-        try { variacoes = JSON.parse(ev.variacoes); } catch (_) {}
-        if (!variacoes.length) return;
+        // Só agenda se a janela ainda não terminou hoje
+        if (fimMs <= agoraMs) continue;
 
-        // Pega todos os bots femininos ativos com instância rodando
-        const botsF = [...instancias.values()].filter(i => i.sexo === "F" && i.bot);
-        const shuffled = botsF.sort(() => Math.random() - 0.5);
+        const distribuicao = cfg.pico
+          ? distribuirBotsNaJanela(botsF, cfg.janelaInicio, cfg.janelaFim, cfg.pico)
+          : distribuirBotsJanelaSimples(botsF, cfg.janelaInicio, cfg.janelaFim);
 
-        let delay = 0;
+        let agendados = 0;
+        for (const { inst, targetMs } of distribuicao) {
+          if (targetMs <= agoraMs) continue; // já passou
+          const msAte = targetMs - agoraMs;
+          const texto = rand(variacoes);
+          const t = setTimeout(async () => {
+            const cfg2 = await prisma.bot.findUnique({ where: { id: inst.botId } });
+            if (!cfg2 || !cfg2.ativo) return;
+            try { await inst.bot.sendMessage(cfg2.grupoId, resolverTexto(texto, cfg2)); }
+            catch (err) { log(cfg2.nome, `Erro global janela: ${err.message}`); }
+          }, msAte);
+          timers.push(t);
+          agendados++;
+        }
+        log("GLOBAL", `${ev.nome} (janela ${cfg.janelaInicio}-${cfg.janelaFim}): ${agendados} bots agendados`);
+
+      } else {
+        // MODO HORÁRIO FIXO com delay sequencial entre bots
+        const [h, m] = ev.horario.split(":").map(Number);
+        const alvoMs = h * 3600000 + m * 60000;
+        if (alvoMs <= agoraMs && (agoraMs - alvoMs) > 60000) continue; // já passou há mais de 1 min
+
+        const msBase = alvoMs > agoraMs ? alvoMs - agoraMs : 0;
+        const shuffled = shuffle(botsF);
+        let delay = msBase;
+
         for (const inst of shuffled) {
           const texto = rand(variacoes);
           const d = delay;
-          setTimeout(async () => {
-            const cfg = await prisma.bot.findUnique({ where: { id: inst.botId } });
-            if (cfg && cfg.ativo) {
-              try { await inst.bot.sendMessage(cfg.grupoId, resolverTexto(texto, cfg)); }
-              catch (err) { log(cfg.nome, `Erro global: ${err.message}`); }
-            }
+          const t = setTimeout(async () => {
+            const cfg2 = await prisma.bot.findUnique({ where: { id: inst.botId } });
+            if (!cfg2 || !cfg2.ativo) return;
+            try { await inst.bot.sendMessage(cfg2.grupoId, resolverTexto(texto, cfg2)); }
+            catch (err) { log(cfg2.nome, `Erro global fixo: ${err.message}`); }
           }, d);
+          timers.push(t);
           delay += Math.floor(Math.random() * 17000) + 8000; // 8-25s entre cada bot
         }
-        log("GLOBAL", `${ev.nome} disparado para ${shuffled.length} bots`);
-      }, msAte);
-
-      timers.push(t);
+        log("GLOBAL", `${ev.nome} (fixo ${ev.horario}): ${shuffled.length} bots agendados`);
+      }
     }
 
-    // Reagenda para o próximo dia
+    // Reagenda para amanhã à meia-noite
     const amanha = new Date();
     amanha.setDate(amanha.getDate() + 1);
     amanha.setHours(0, 0, 30, 0);
@@ -148,9 +248,7 @@ async function getDiaAtualCiclo() {
   if (!cfg) {
     cfg = await prisma.config.create({ data: { chave: "ciclo_inicio", valor: new Date().toISOString() } });
   }
-  const inicio = new Date(cfg.valor);
-  const hoje = new Date();
-  const diffDias = Math.floor((hoje - inicio) / (1000 * 60 * 60 * 24));
+  const diffDias = Math.floor((Date.now() - new Date(cfg.valor).getTime()) / (1000 * 60 * 60 * 24));
   const totalDias = await prisma.roteiroDia.count({ where: { ativo: true } });
   if (totalDias === 0) return null;
   return (diffDias % totalDias) + 1;
@@ -167,24 +265,23 @@ async function agendarRoteiroDia(instancias) {
   });
   if (!roteiro) return timers;
 
-  log("ROTEIRO", `Dia ${diaNum} — ${roteiro.eventos.length} eventos agendados`);
+  log("ROTEIRO", `Dia ${diaNum} — ${roteiro.eventos.length} eventos`);
 
   const agora = new Date();
+  const agoraMs = agora.getHours() * 3600000 + agora.getMinutes() * 60000 + agora.getSeconds() * 1000;
 
   for (const ev of roteiro.eventos) {
-    const [h, m, s] = ev.horario.split(":").map(Number);
-    const alvo = new Date();
-    alvo.setHours(h, m, s || 0, 0);
-    if (alvo <= agora) continue; // já passou hoje
+    const evMs = horarioParaMs(ev.horario);
+    if (evMs <= agoraMs) continue;
 
-    const msAte = alvo.getTime() - Date.now();
+    const msAte = evMs - agoraMs;
     const t = setTimeout(async () => {
       const inst = instancias.get(ev.botId);
       if (!inst) return;
       const cfg = await prisma.bot.findUnique({ where: { id: ev.botId } });
       if (!cfg || !cfg.ativo) return;
       await enviarMensagem(inst.bot, cfg.grupoId, cfg, ev.texto, ev.mediaUrl, ev.mediaTipo);
-      log(cfg.nome, `Roteiro dia ${diaNum}: "${(ev.texto || "midia").substring(0, 40)}"`);
+      log(cfg.nome, `Roteiro D${diaNum}: "${(ev.texto || "midia").substring(0, 40)}"`);
     }, msAte);
     timers.push(t);
   }
@@ -195,24 +292,26 @@ async function agendarRoteiroDia(instancias) {
   amanha.setHours(0, 1, 0, 0);
   const tAmanha = setTimeout(() => agendarRoteiroDia(instancias), amanha.getTime() - Date.now());
   timers.push(tAmanha);
-
   return timers;
 }
 
 // ============================================================
-// CAMADA 3 — MÍDIAS ALEATÓRIAS (cronograma por nível)
-// Janela: 06:00 – 01:00
+// CAMADA 3 — MÍDIAS ALEATÓRIAS
 // ============================================================
 function dentroJanela() {
-  const h = new Date().getHours();
-  const m = new Date().getMinutes();
+  const h = new Date().getHours(), m = new Date().getMinutes();
   const total = h * 60 + m;
-  return total >= 360 || total < 60; // 06:00 até 01:00
+  return total >= 360 || total < 60;
+}
+
+async function getMidiaAleatoria(botId) {
+  const cats = ["apresentacao", "rotina", "interacao", "chamada_pvt"];
+  const cat = rand(cats);
+  const midias = await prisma.midia.findMany({ where: { botId, categoria: cat } });
+  return midias.length ? rand(midias) : null;
 }
 
 function agendarMidiaAleatoriaBot(bot, config) {
-  if (!botsAtivos.has(config.id)) return;
-
   async function tick() {
     if (!botsAtivos.has(config.id)) return;
     const inst = botsAtivos.get(config.id);
@@ -230,16 +329,11 @@ function agendarMidiaAleatoriaBot(bot, config) {
 
     const intervalo = intervaloAleatorio();
     const t = setTimeout(tick, intervalo);
-    if (botsAtivos.has(config.id)) {
-      const i = botsAtivos.get(config.id);
-      i.timerMidia = t;
-    }
+    if (botsAtivos.has(config.id)) botsAtivos.get(config.id).timerMidia = t;
   }
 
-  // Inicia com um delay inicial aleatório para não todos ao mesmo tempo
   const inicioAleatorio = Math.floor(Math.random() * 60000);
-  const t = setTimeout(tick, inicioAleatorio);
-  return t;
+  return setTimeout(tick, inicioAleatorio);
 }
 
 // ============================================================
@@ -248,7 +342,7 @@ function agendarMidiaAleatoriaBot(bot, config) {
 async function processarPrivado(bot, msg, config) {
   const telegramId = String(msg.chat.id);
   if (!config.funilId) {
-    bot.sendMessage(msg.chat.id, resolverTexto("Oi! Sou a {nome}, de {cidade}. Me chama!", config));
+    bot.sendMessage(msg.chat.id, resolverTexto("Oi! Sou {nome}, de {cidade}. Me chama!", config));
     return;
   }
   const funil = await prisma.funil.findUnique({
@@ -307,7 +401,6 @@ async function iniciarBot(config) {
   try {
     const bot = new TelegramBot(config.token, { polling: true });
     log(config.nome, "Iniciado!");
-
     bot.on("message", async (msg) => {
       if (msg.chat.type !== "private") return;
       await processarPrivado(bot, msg, config);
@@ -315,14 +408,7 @@ async function iniciarBot(config) {
     bot.on("polling_error", err => log(config.nome, `Polling: ${err.message}`));
 
     const timerMidia = agendarMidiaAleatoriaBot(bot, config);
-
-    botsAtivos.set(config.id, {
-      bot,
-      botId: config.id,
-      nome: config.nome,
-      sexo: config.sexo || "F",
-      timerMidia,
-    });
+    botsAtivos.set(config.id, { bot, botId: config.id, nome: config.nome, sexo: config.sexo || "F", timerMidia });
     return true;
   } catch (err) {
     log(config.nome, `Falha: ${err.message}`);
@@ -343,9 +429,8 @@ async function iniciarTodosBots() {
   const bots = await prisma.bot.findMany({ where: { ativo: true } });
   log("SISTEMA", `Iniciando ${bots.length} bots...`);
   for (const b of bots) await iniciarBot(b);
-  log("SISTEMA", "Todos os bots iniciados!");
+  log("SISTEMA", "Todos iniciados!");
 
-  // Inicia camadas globais
   timersGlobais = agendarEventosGlobais(botsAtivos);
   timersRoteiro = await agendarRoteiroDia(botsAtivos);
   log("SISTEMA", "Camadas global e roteiro ativas!");
