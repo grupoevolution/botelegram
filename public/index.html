@@ -749,17 +749,25 @@ async function importarRoteiro(){
 }
 
 // GLOBAIS
+function parseVarGlobal(variacoes){
+  try{
+    const p=JSON.parse(variacoes);
+    if(Array.isArray(p)) return {textos:p,janela:null};
+    return {textos:p.textos||[],janela:p.janelaInicio?(p.janelaInicio+' - '+p.janelaFim+(p.pico?' (pico '+p.pico+')':'')):null};
+  }catch(_){return {textos:[],janela:null};}
+}
 async function loadGlobais(){
   globais=await req('GET','/api/globais');
   const el=document.getElementById('globais-lista');
   if(!globais.length){el.innerHTML='<div class="empty">Nenhum evento global. Clique em "+ Novo Evento".</div>';return;}
   el.innerHTML=globais.map(g=>{
-    let vars=[];try{vars=JSON.parse(g.variacoes);}catch(_){}
+    const {textos,janela}=parseVarGlobal(g.variacoes);
     return`<div class="gl-card">
       <div class="gl-head">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="gl-hora">${g.horario}</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div class="gl-hora">${janela||g.horario}</div>
           <div class="gl-nome">${g.nome}</div>
+          ${janela?'<span class="badge bgb">janela</span>':'<span class="badge bgy">fixo</span>'}
           <span class="badge ${g.ativo?'bgg':'bgr'}">${g.ativo?'Ativo':'Pausado'}</span>
         </div>
         <div class="acts">
@@ -768,7 +776,7 @@ async function loadGlobais(){
           <button class="btn bd bsm" onclick="delGlobal(${g.id})">Excluir</button>
         </div>
       </div>
-      <div>${vars.map(v=>`<span class="var-chip">${v}</span>`).join('')}</div>
+      <div>${textos.map(v=>`<span class="var-chip">${v}</span>`).join('')}</div>
     </div>`;
   }).join('');
 }
@@ -778,14 +786,20 @@ function openGlobal(gl){
   document.getElementById('gl-hora').value='';document.getElementById('gl-vars').value='';
   document.getElementById('mgl-t').textContent='Novo Evento Global';
   if(gl){
-    let vars=[];try{vars=JSON.parse(gl.variacoes);}catch(_){}
+    const textos=gl._textos||[];
     document.getElementById('mgl-t').textContent='Editar Evento Global';
     document.getElementById('gl-id').value=gl.id;document.getElementById('gl-nome').value=gl.nome;
-    document.getElementById('gl-hora').value=gl.horario;document.getElementById('gl-vars').value=vars.join('\n');
+    document.getElementById('gl-hora').value=gl.horario;document.getElementById('gl-vars').value=textos.join('\n');
   }
   openM('mo-global');
 }
-function editGlobal(id){openGlobal(globais.find(g=>g.id===id));}
+function editGlobal(id){
+  const g=globais.find(x=>x.id===id);
+  if(!g)return;
+  // Normalize: extract textos array for editing
+  const {textos}=parseVarGlobal(g.variacoes);
+  openGlobal({...g, _textos: textos});
+}
 
 async function saveGlobal(){
   const id=document.getElementById('gl-id').value;
