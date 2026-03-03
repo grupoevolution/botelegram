@@ -27,16 +27,25 @@ async function seedAdmin() {
     console.log("[SETUP] Admin criado:", process.env.ADMIN_USER || "admin");
   }
 
-  // Seeds de eventos globais padrão
+  // Seeds de eventos globais padrao
   const evGlobal = await prisma.eventoGlobal.count();
   if (evGlobal === 0) {
+    const bomDia = JSON.stringify({
+      janelaInicio: "06:00", janelaFim: "10:30", pico: "08:30",
+      textos: ["bom dia galera","boaaaa","bom diaaaa gente","dia!","acordei kkk","boa madrugada ainda aqui kkk","gente bom dia","oi sumidas, bom dia!","bom dia minha gente","acordei animada hoje"]
+    });
+    const boaNoiteCasual = JSON.stringify({
+      janelaInicio: "18:30", janelaFim: "20:00",
+      textos: ["boa noite gente","noitinha boa pra todas","saindo agora","partiu","arrumando pra sair","vou sair hoje","e ai, o que vcs vao fazer essa noite?","noite boa","boa noite minha gente"]
+    });
     await prisma.eventoGlobal.createMany({ data: [
-      { nome: "bom_dia",   horario: "07:35", variacoes: JSON.stringify(["bom dia galera","boaaaa","bom diaaaa gente","dia!","acordei kkk","boa madrugada ainda aqui kkk","gente bom dia","oi sumidas, bom dia!"]) },
-      { nome: "boa_tarde", horario: "13:15", variacoes: JSON.stringify(["boa tarde pessoal","tardinha","oi gente","passou rapido esse dia","tarde boa pra todas","e ai gente, boa tarde"]) },
-      { nome: "boa_noite", horario: "22:10", variacoes: JSON.stringify(["boa noite gente","ate amanha","vou dormir logo","noite!","noitinha boa pra todas","tô indo dormir, boa noite"]) },
-      { nome: "almoco",    horario: "12:05", variacoes: JSON.stringify(["almoço feito","hora do almoço","comendo agora","meu almoço hoje ficou uma delicia","partiu almoço"]) },
+      { nome: "bom_dia",          horario: "06:00", variacoes: bomDia },
+      { nome: "almoco",           horario: "12:05", variacoes: JSON.stringify(["almoco feito","hora do almoco","comendo agora","meu almoco hoje ficou uma delicia","partiu almoco","almocando agora","que fome"]) },
+      { nome: "boa_tarde",        horario: "13:15", variacoes: JSON.stringify(["boa tarde pessoal","tardinha","oi gente","passou rapido esse dia","tarde boa pra todas","e ai gente, boa tarde","boa tarde minha gente"]) },
+      { nome: "boa_noite_casual", horario: "18:30", variacoes: boaNoiteCasual },
+      { nome: "boa_noite_dormir", horario: "22:10", variacoes: JSON.stringify(["boa noite gente","ate amanha","vou dormir logo","noite!","tô indo dormir, boa noite","indo descansar","que sono"]) },
     ]});
-    console.log("[SETUP] Eventos globais padrão criados");
+    console.log("[SETUP] Eventos globais padrao criados");
   }
 }
 
