@@ -104,6 +104,7 @@ async function enviarMensagem(bot, grupoId, config, texto, mediaUrl, mediaTipo) 
       const caption = resolverTexto(texto, config);
       if (mediaTipo === "foto")       await bot.sendPhoto(grupoId, mediaUrl, { caption });
       else if (mediaTipo === "video") await bot.sendVideo(grupoId, mediaUrl, { caption });
+      else if (mediaTipo === "voz")   await bot.sendVoice(grupoId, mediaUrl);
       else if (mediaTipo === "audio") await bot.sendAudio(grupoId, mediaUrl);
     } else if (texto) {
       await bot.sendMessage(grupoId, resolverTexto(texto, config));
@@ -205,7 +206,7 @@ function agendarEventosGlobais(instancias) {
         let agendados = 0;
         for (const { inst, targetMs } of distribuicao) {
           if (targetMs <= agoraMsVal) continue; // ja passou
-          const msAte = targetMs - agoraMs;
+          const msAte = targetMs - agoraMs();
           const texto = rand(variacoes);
           const t = setTimeout(async () => {
             const cfg2 = await prisma.bot.findUnique({ where: { id: inst.botId } });
@@ -389,6 +390,7 @@ async function processarPrivado(bot, msg, config) {
       if (passo.mediaTipo === "foto")       await bot.sendPhoto(msg.chat.id, passo.mediaUrl, { caption: cap });
       else if (passo.mediaTipo === "video") await bot.sendVideo(msg.chat.id, passo.mediaUrl, { caption: cap });
       else if (passo.mediaTipo === "audio") await bot.sendAudio(msg.chat.id, passo.mediaUrl);
+      else if (passo.mediaTipo === "voz") await bot.sendVoice(msg.chat.id, passo.mediaUrl);
     } catch (_) {
       if (passo.texto) await bot.sendMessage(msg.chat.id, resolverTexto(passo.texto, config));
     }
